@@ -1,0 +1,13 @@
+repositories {
+    mavenCentral()
+}
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile "org.projectlombok:lombok:1.16.10"
+}
+

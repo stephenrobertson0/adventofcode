@@ -3,6 +3,7 @@ package _2022;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -85,41 +86,8 @@ public class _13 {
         throw new RuntimeException();
     }
     
-    public static void a() throws Exception {
-    
-        BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input13.txt"));
-        
-        int index = 1;
-        long total = 0;
-        
-        while (true) {
-    
-            final String lineLeft = fileReader.readLine();
-            final String lineRight = fileReader.readLine();
-    
-            Node left = parseNodes(lineLeft);
-            Node right = parseNodes(lineRight);
-    
-            //System.out.println("COMPARE: " + compareTo(left, right));
-            
-            if (compareTo(left, right) > 0) {
-                total += index;
-            }
-    
-            index ++;
-            final String space = fileReader.readLine();
-    
-            if (space == null) {
-                break;
-            }
-        }
-    
-        System.out.println(total);
-        
-    }
-    
     private static Node parseNodes(String line) {
-    
+        
         Node current = new Node();
         
         for (int j = 0; j < line.length(); j ++) {
@@ -153,8 +121,72 @@ public class _13 {
         return current;
     }
     
+    public static void a() throws Exception {
+    
+        BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input13.txt"));
+        
+        int index = 1;
+        long total = 0;
+        
+        while (true) {
+    
+            final String lineLeft = fileReader.readLine();
+            final String lineRight = fileReader.readLine();
+    
+            Node left = parseNodes(lineLeft);
+            Node right = parseNodes(lineRight);
+    
+            //System.out.println("COMPARE: " + compareTo(left, right));
+            
+            if (compareTo(left, right) > 0) {
+                total += index;
+            }
+    
+            index ++;
+            final String space = fileReader.readLine();
+    
+            if (space == null) {
+                break;
+            }
+        }
+    
+        System.out.println(total);
+        
+    }
+    
     public static void b() throws Exception {
     
+        BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input13.txt"));
+        
+        List<Node> allNodes = new ArrayList<>();
+    
+        while (true) {
+        
+            final String lineLeft = fileReader.readLine();
+            final String lineRight = fileReader.readLine();
+        
+            Node left = parseNodes(lineLeft);
+            Node right = parseNodes(lineRight);
+        
+            allNodes.add(left);
+            allNodes.add(right);
+            
+            final String space = fileReader.readLine();
+        
+            if (space == null) {
+                break;
+            }
+        }
+        
+        Node node1 = parseNodes("[[2]]");
+        Node node2 = parseNodes("[[6]]");
+        
+        allNodes.add(node1);
+        allNodes.add(node2);
+    
+        Collections.sort(allNodes, (x,y)->compareTo(y, x));
+        
+        System.out.println((allNodes.indexOf(node1)+1) * (allNodes.indexOf(node2)+1));
         
     }
     

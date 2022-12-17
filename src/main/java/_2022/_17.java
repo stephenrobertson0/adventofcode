@@ -11,10 +11,10 @@ public class _17 {
     
     private static class Coord {
     
-        int x;
-        int y;
+        long x;
+        long y;
         
-        public Coord(int x, int y) {
+        public Coord(long x, long y) {
             this.x = x;
             this.y = y;
         }
@@ -69,8 +69,6 @@ public class _17 {
         }
     }
     
-    static int[][] chamber = new int[7][10000];
-    
     public static void a() throws Exception {
     
         BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input17.txt"));
@@ -79,10 +77,11 @@ public class _17 {
         
         Directions directions = new Directions(0, line);
         Blocks blocks = new Blocks();
+        int[][] chamber = new int[7][4000000];
         
-        int heighestRock = -1;
+        long heighestRock = -1;
         
-        for (int j = 0; j < 2022; j++) {
+        for (int j = 0; j < 2000000; j++) {
         
             List<Coord> currentBlock = blocks.getNextBlock().stream().map(v->v.clone()).collect(Collectors.toList());
             
@@ -100,7 +99,7 @@ public class _17 {
                 boolean canMoveHorizontally = true;
     
                 for (Coord coord : currentBlock) {
-                    if (coord.x + currentDir >= 7 || coord.x + currentDir < 0 || chamber[coord.x + currentDir][coord.y] == 1) {
+                    if (coord.x + currentDir >= 7 || coord.x + currentDir < 0 || chamber[(int)coord.x + currentDir][(int)coord.y] == 1) {
                         canMoveHorizontally = false;
                         break;
                     }
@@ -113,12 +112,12 @@ public class _17 {
                 }
     
                 //System.out.println("Moved horizontally: " + currentDir);
-                //printChamber(currentBlock);
+                //printChamber(chamber, currentBlock);
     
                 boolean canMoveDown = true;
     
                 for (Coord coord : currentBlock) {
-                    if (coord.y - 1 < 0 || chamber[coord.x][coord.y - 1] == 1) {
+                    if (coord.y - 1 < 0 || chamber[(int)coord.x][(int)coord.y - 1] == 1) {
                         canMoveDown = false;
                         break;
                     }
@@ -133,11 +132,11 @@ public class _17 {
                 }
     
                 //System.out.println("Moved down: ");
-                //printChamber(currentBlock);
+                //printChamber(chamber, currentBlock);
             }
     
             for (Coord coord : currentBlock) {
-                chamber[coord.x][coord.y] = 1;
+                chamber[(int)coord.x][(int)coord.y] = 1;
             }
     
             for (Coord coord : currentBlock) {
@@ -152,7 +151,7 @@ public class _17 {
         
     }
     
-    private static void printChamber(List<Coord> block) {
+    private static void printChamber(int[][] chamber, List<Coord> block) {
         for (int k = 20; k >= 0; k--) {
             System.out.print("|");
             
@@ -167,7 +166,7 @@ public class _17 {
                 }
                 
                 if (blockIsPresent && chamber[m][k] == 1) {
-                    throw new RuntimeException("Invalid state");
+                    //throw new RuntimeException("Invalid state");
                 }
                 
                 System.out.print(chamber[m][k] == 0 ? (blockIsPresent ? "@" : ".") : "#");
@@ -179,8 +178,121 @@ public class _17 {
         System.out.println("---------");
     }
     
-    public static void b() throws Exception {
+    private static void printChamber(int[][] chamber, int top, int bottom) {
+        for (int k = top; k >= bottom; k--) {
+            System.out.print("|");
+            
+            for (int m = 0; m < 7; m++) {
+                
+                System.out.print(chamber[m][k] == 0 ? "." : "#");
+            }
+            
+            System.out.println("|");
+        }
+        
+        System.out.println("---------");
+    }
     
+    public static void b() throws Exception {
+        BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input17.txt"));
+    
+        final String line = fileReader.readLine();
+    
+        Directions directions = new Directions(0, line);
+        Blocks blocks = new Blocks();
+        int[][] chamber = new int[7][100_000_000];
+    
+        long heighestRock = -1;
+        long yShift = 0;
+    
+        for (int j = 0; j < 1_000_000_000_000L; j++) {
+        
+            List<Coord> currentBlock = blocks.getNextBlock().stream().map(v->v.clone()).collect(Collectors.toList());
+        
+            Coord startPos = new Coord(2, heighestRock - yShift + 4);
+        
+            for (Coord coord : currentBlock) {
+                coord.x += startPos.x;
+                coord.y += startPos.y;
+            }
+        
+            while (true) {
+            
+                int currentDir = directions.getNextDir();
+            
+                boolean canMoveHorizontally = true;
+            
+                for (Coord coord : currentBlock) {
+                    if (coord.x + currentDir >= 7 || coord.x + currentDir < 0 || chamber[(int)coord.x + currentDir][(int)coord.y] == 1) {
+                        canMoveHorizontally = false;
+                        break;
+                    }
+                }
+            
+                if (canMoveHorizontally) {
+                    for (Coord coord : currentBlock) {
+                        coord.x += currentDir;
+                    }
+                }
+            
+                //System.out.println("Moved horizontally: " + currentDir);
+                //printChamber(chamber, currentBlock);
+            
+                boolean canMoveDown = true;
+            
+                for (Coord coord : currentBlock) {
+                    if (coord.y - 1 < 0 || chamber[(int)coord.x][(int)coord.y - 1] == 1) {
+                        canMoveDown = false;
+                        break;
+                    }
+                }
+            
+                if (!canMoveDown) {
+                    break;
+                }
+            
+                for (Coord coord : currentBlock) {
+                    coord.y -= 1;
+                }
+            
+                //System.out.println("Moved down: ");
+                //printChamber(chamber, currentBlock);
+            }
+        
+            for (Coord coord : currentBlock) {
+                chamber[(int)coord.x][(int)coord.y] = 1;
+            }
+        
+            for (Coord coord : currentBlock) {
+                if (coord.y > heighestRock - yShift) {
+                    heighestRock = coord.y + yShift;
+                }
+            }
+    
+            //printChamber(chamber, currentBlock);
+            
+            if (heighestRock - yShift > (100_000_000-10)) {
+    
+                int[][] newChamber = new int[7][100_000_000];
+                
+                for (int m = 0; m < 100; m++) {
+                    for (int n = 0; n < 7; n++) {
+                        newChamber[n][m] = chamber[n][(int)(heighestRock - yShift - 99 + m)];
+                    }
+                }
+    
+                //System.out.println("Chamber");
+                //printChamber(chamber, 1000-1, 1000-1 - 100);
+                //System.out.println("New Chamber");
+                //printChamber(newChamber, 100, 0);
+                
+                chamber = newChamber;
+                yShift += (heighestRock - yShift) - 99;
+            }
+            
+        }
+    
+        System.out.println(heighestRock+1);
         
     }
     

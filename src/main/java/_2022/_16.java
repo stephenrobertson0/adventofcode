@@ -7,14 +7,22 @@ import java.util.*;
 
 public class _16 {
     
+    private static class Edge {
+        private Node dest;
+        private int distance;
+    
+        public Edge(Node dest, int distance) {
+            this.dest = dest;
+            this.distance = distance;
+        }
+    }
+    
     private static class Node {
         int value;
         String name;
         List<Node> neighbours = new ArrayList<>();
+        List<Edge> edges = new ArrayList<>();
         String neighbourNodeString;
-        boolean isOpen = false;
-        int distance = 1;
-        double reward = -1;
         
         @Override
         public String toString() {
@@ -22,95 +30,40 @@ public class _16 {
                     "name='" + name +
                     //", nodes=" + neighbours.stream().map(v->v.name).collect(Collectors.joining(",")) +
                     ", value=" + value +
-                    ", reward=" + reward +
-                    ", distance=" + distance +
                     '}';
-        }
-        
-        public int getMax(int minutesLeft, Set<Node> allOpen, int level) {
-            if (minutesLeft <= 0) {
-                return 0;
-            }
-            
-            if (allOpen.size() == 6) {
-                int total = 0;
-                
-                for (Node open : allOpen) {
-                    total+= open.value * (minutesLeft-2);
-                }
-                
-                return total;
-            }
-            
-            // Don't open can mean already open
-            int dontOpenOption = 0;
-            int openOption = -1;
-
-            int maxChildVal = 0;
-
-            for (Node child : neighbours) {
-                int max = child.getMax(minutesLeft-1, allOpen, level+1);
-                if (max > maxChildVal) {
-                    maxChildVal = max;
-                }
-            }
-    
-            dontOpenOption = maxChildVal;
-    
-            if (level == 1) {
-                System.out.println();
-            }
-            
-            if (!isOpen && value != 0 && minutesLeft >=2) {
-                
-                int maxCVal = 0;
-        
-                this.isOpen = true;
-                allOpen.add(this);
-        
-                for (Node child : neighbours) {
-                    int max = child.getMax(minutesLeft-2, allOpen, level+1);
-                    if (max > maxCVal) {
-                        maxCVal = max;
-                    }
-                }
-        
-                openOption = maxCVal;
-    
-                this.isOpen = false;
-                allOpen.remove(this);
-        
-            }
-            
-            if (dontOpenOption > openOption) {
-                if (level == 1) {
-                    System.out.println("Not opening: " + name);
-                }
-                
-                return dontOpenOption;
-            } else {
-                if (level == 1) {
-                    System.out.println("Opening: " + name);
-                }
-                
-                this.isOpen = true;
-                allOpen.add(this);
-                return openOption + value*minutesLeft;
-            }
         }
     }
     
-    private static class NodeState {
-    
-        private Map<String, Node> allOpen;
-        private Node node;
-        private long totalFlow;
+    private static int getMax(int minutesLeft, Node startNode, Set<Node> alreadyOpened) {
         
-        public NodeState(Map<String, Node> allOpen, Node node, long totalFlow) {
-            this.allOpen = allOpen;
-            this.node = node;
-            this.totalFlow = totalFlow;
+        if (minutesLeft <= 0) {
+            return 0;
         }
+        
+        int max = 0;
+        Node selectedNode = null;
+        
+        for (Edge edge : startNode.edges) {
+            
+            if (edge.distance < minutesLeft && !alreadyOpened.contains(edge.dest)) {
+                Set<Node> newAlreadyOpened = new HashSet<>(alreadyOpened);
+                newAlreadyOpened.add(edge.dest);
+                
+                int amount = alreadyOpened.stream().mapToInt(v->v.value).sum() * (edge.distance + 1)
+                        + getMax(minutesLeft - edge.distance - 1, edge.dest, newAlreadyOpened);
+                if (amount > max) {
+                    max = amount;
+                    selectedNode = edge.dest;
+                }
+            }
+        }
+        
+        if (selectedNode == null) {
+            return max + alreadyOpened.stream().mapToInt(v->v.value).sum() * minutesLeft;
+        } else {
+            return max;
+        }
+        
     }
     
     public static void a() throws Exception {
@@ -163,93 +116,11 @@ public class _16 {
             }
         }
         
-        Set<NodeState> states = new HashSet<>();
-        
-        states.add(new NodeState(new HashMap<>(), startNode, 0));
-        
-        for (int j = 0; j < 30; j++) {
-    
-            Set<NodeState> newStates = new HashSet<>();
-            
-            for (NodeState state : states) {
-                
-                long flow = state.allOpen.values().stream().mapToLong(e -> e.value).sum() + state.totalFlow;
-    
-                if(state.node.value > 0 && !state.allOpen.containsKey(state.node.name)) {
-                    Map<String, Node> newOpen = new HashMap<>(state.allOpen);
-                    newOpen.put(state.node.name, state.node);
-                    newStates.add(new NodeState(newOpen, state.node, flow));
-                }
-                
-                for (int k = 0; k < state.node.neighbours.size(); k++) {
-                    newStates.add(new NodeState(state.allOpen, state.node.neighbours.get(k), flow));
-                }
-            }
-            
-            states = newStates;
-        
-        }
-    
-        System.out.println(states.stream().mapToLong(v->v.totalFlow).max().getAsLong());
-        
-        //int distanceTravelled = 0;
-        
-        /*while (true) {
-            
-            if (distanceTravelled > 30) {
-                break;
-            }
-            
-            Set<Node> alreadyVisited = new HashSet<>();
-    
-            PriorityQueue<Node> queue = new PriorityQueue<>((o1, o2) -> o1.distance - o2.distance);
-    
-            queue.add(startNode);
-            startNode.distance = 0;
-    
-            while (!queue.isEmpty()) {
-                Node currentNode = queue.poll();
-        
-                if (!alreadyVisited.contains(currentNode)) {
-                    for (Node neighbour : currentNode.neighbours) {
-                
-                        if (neighbour.value / (currentNode.distance + 1) > neighbour.reward) {
-                            neighbour.reward = neighbour.value / (currentNode.distance + 1);
-                            neighbour.distance = currentNode.distance + 1;
-                        }
-                
-                        queue.add(neighbour);
-                    }
-            
-                    alreadyVisited.add(currentNode);
-                }
-        
-            }
-    
-            for (Node node : allNodes) {
-                System.out.println(node);
-            }
-    
-            Collections.sort(allNodes, (x,y) -> Double.compare(y.reward, x.reward));
-            
-            Node destination = allNodes.get(0);
-            
-            System.out.println("Destination picked: " + destination);
-            
-            destination.value=0;
-            distanceTravelled += destination.distance;
-            distanceTravelled += 1;
-            startNode = destination;
-            
-            for (Node node : allNodes) {
-                node.reward = -1;
-                node.distance = 1;
-            }
-        }*/
-        
         //simulateScenarios(allNodesByName);
         
-        /*int[][] dists = new int[allNodes.size()][allNodes.size()];
+        // Floyd–Warshall to get minimum distances between all pairs
+        
+        int[][] dists = new int[allNodes.size()][allNodes.size()];
         
         for (int j = 0; j < dists.length; j++) {
             for (int k = 0; k < dists.length; k++) {
@@ -268,16 +139,6 @@ public class _16 {
             }
         }
     
-        for (int j = 0; j < dists.length; j++) {
-            for (int k = 0; k < dists.length; k++) {
-    
-                System.out.print(dists[j][k] + " ");
-            
-            }
-    
-            System.out.println();
-        }
-    
         for (int k = 0; k < dists.length; k++) {
             for (int i = 0; i < dists.length; i++) {
                 for (int j = 0; j < dists.length; j++) {
@@ -287,31 +148,25 @@ public class _16 {
             }
         }
     
-        System.out.println();
+        /*System.out.println();
         
         for (int j = 0; j < dists.length; j++) {
             for (int k = 0; k < dists.length; k++) {
-            
                 System.out.print(dists[j][k] + " ");
-            
             }
         
             System.out.println();
-        }
-        
-        List<Node> nonZeroNodes = new ArrayList<>();
-        
-        for (Node node : allNodes) {
-            if (node.value != 0) {
-                nonZeroNodes.add(node);
+        }*/
+    
+        for (int j = 0; j < allNodes.size(); j++) {
+            for (int k = 0; k < allNodes.size(); k++) {
+                if (j != k && (allNodes.get(k).value != 0 || allNodes.get(k) == startNode)) {
+                    allNodes.get(j).edges.add(new Edge(allNodes.get(k), dists[j][k]));
+                }
             }
         }
-        */
         
-        
-        //System.out.println(allNodes);
-    
-        //System.out.println(startNode.getMax(30, new HashSet<>(), 0));
+        System.out.println(getMax(30, startNode, new HashSet<>()));
     }
     
     private static void simulateScenarios(Map<String, Node> allNodesByName) {

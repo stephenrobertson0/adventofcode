@@ -66,6 +66,80 @@ public class _16 {
         
     }
     
+    private static int getMax2(int minutesLeft, int minutes1InBag, int minutes2InBag, Node startNode1, Node startNode2, Set<Node> alreadyOpened) {
+        
+        if (minutesLeft <= 0) {
+            return 0;
+        }
+        
+        int max = 0;
+        Node selectedNode = null;
+        
+        for (int j = 0; j < startNode1.edges.size(); j++) {
+            for (int k = j+1; k < startNode2.edges.size(); k++) {
+                
+                Edge edge1 = startNode1.edges.get(j);
+                Edge edge2 = startNode1.edges.get(k);
+                
+                /*if (edge1.dest == edge2.dest) {
+                    continue;
+                }*/
+    
+                if (edge1.distance <= minutes1InBag && !alreadyOpened.contains(edge1.dest) && edge2.distance <= minutes2InBag && !alreadyOpened.contains(edge2.dest)) {
+                    Set<Node> newAlreadyOpened = new HashSet<>(alreadyOpened);
+                    newAlreadyOpened.add(edge1.dest);
+                    newAlreadyOpened.add(edge2.dest);
+    
+                    //System.out.println("Opening: " + edge1.dest + " and " + edge2.dest );
+                    
+                    int amount = getMax2(minutesLeft - 1, minutes1InBag - edge1.distance, minutes2InBag - edge2.distance, edge1.dest, edge2.dest, newAlreadyOpened);
+                    if (amount > max) {
+                        max = amount;
+                        selectedNode = edge1.dest;
+                    }
+                    
+                } else if (edge1.distance <= minutes1InBag && !alreadyOpened.contains(edge1.dest)) {
+    
+                    //System.out.println("Opening 1: " + edge1.dest);
+                    
+                    Set<Node> newAlreadyOpened = new HashSet<>(alreadyOpened);
+                    newAlreadyOpened.add(edge1.dest);
+        
+                    int amount = getMax2(minutesLeft - 1, minutes1InBag - edge1.distance, minutes2InBag+1, edge1.dest, startNode2, newAlreadyOpened);
+                    if (amount > max) {
+                        max = amount;
+                        selectedNode = edge1.dest;
+                    }
+                } else if (edge2.distance <= minutes2InBag && !alreadyOpened.contains(edge2.dest)) {
+    
+                    //System.out.println("Opening 2: " + edge1.dest);
+                    
+                    Set<Node> newAlreadyOpened = new HashSet<>(alreadyOpened);
+                    newAlreadyOpened.add(edge2.dest);
+    
+                    int amount = getMax2(minutesLeft - 1, minutes1InBag+1,minutes2InBag - edge2.distance, startNode1, edge2.dest, newAlreadyOpened);
+                    if (amount > max) {
+                        max = amount;
+                        selectedNode = edge2.dest;
+                    }
+                }
+                
+            }
+        }
+    
+        //System.out.println("Max: " + max);
+        //System.out.println("Already Open: " + alreadyOpened);
+        
+        if (selectedNode == null) {
+            //System.out.println("Not opening anything: " + (alreadyOpened.stream().mapToInt(v -> v.value).sum() + getMax2(minutesLeft-1, minutes1InBag+1, minutes2InBag +1, startNode1, startNode2, alreadyOpened)));
+            
+            return alreadyOpened.stream().mapToInt(v -> v.value).sum() + getMax2(minutesLeft-1, minutes1InBag+1, minutes2InBag +1, startNode1, startNode2, alreadyOpened);
+        } else {
+            return alreadyOpened.stream().mapToInt(v -> v.value).sum() + max;
+        }
+        
+    }
+    
     public static void a() throws Exception {
     
         BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input16.txt"));
@@ -213,12 +287,113 @@ public class _16 {
     
     public static void b() throws Exception {
     
+        BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input16.txt"));
     
+        List<Node> allNodes = new ArrayList<>();
+        Map<String, Node> allNodesByName = new HashMap<>();
+    
+        Node startNode = null;
+    
+        while (true) {
+        
+            final String line = fileReader.readLine();
+        
+            if (line == null) {
+                break;
+            }
+        
+            String valveName = line.substring(6, 8);
+            String rate = line.substring(line.indexOf('=')+1, line.indexOf(';'));
+        
+            int index = line.indexOf("valves");
+        
+            if (index == -1) {
+                index = line.indexOf("valve") + 6;
+            } else {
+                index += 7;
+            }
+        
+            String toValves = line.substring(index);
+        
+            Node node = new Node();
+            node.name = valveName;
+            node.value = Integer.parseInt(rate);
+            node.neighbourNodeString = toValves;
+        
+            allNodes.add(node);
+            allNodesByName.put(valveName, node);
+        
+            if (valveName.equals("AA")) {
+                startNode = node;
+            }
+        }
+    
+        for (Node node : allNodes) {
+            String[] split = node.neighbourNodeString.split(", ");
+            for (String s : split) {
+                node.neighbours.add(allNodesByName.get(s));
+            }
+        }
+    
+        //simulateScenarios(allNodesByName);
+    
+        // Floyd–Warshall to get minimum distances between all pairs
+    
+        int[][] dists = new int[allNodes.size()][allNodes.size()];
+    
+        for (int j = 0; j < dists.length; j++) {
+            for (int k = 0; k < dists.length; k++) {
+                if (j == k) {
+                    dists[j][k] = 0;
+                } else {
+                    Node node1 = allNodes.get(j);
+                    Node node2 = allNodes.get(k);
+                
+                    if (node1.neighbours.contains(node2)) {
+                        dists[j][k] = 1;
+                    } else {
+                        dists[j][k] = 1_000_000;
+                    }
+                }
+            }
+        }
+    
+        for (int k = 0; k < dists.length; k++) {
+            for (int i = 0; i < dists.length; i++) {
+                for (int j = 0; j < dists.length; j++) {
+                    if (dists[i][k] + dists[k][j] < dists[i][j])
+                        dists[i][j] = dists[i][k] + dists[k][j];
+                }
+            }
+        }
+    
+        /*System.out.println();
+        
+        for (int j = 0; j < dists.length; j++) {
+            for (int k = 0; k < dists.length; k++) {
+                System.out.print(dists[j][k] + " ");
+            }
+        
+            System.out.println();
+        }*/
+    
+        for (int j = 0; j < allNodes.size(); j++) {
+            for (int k = 0; k < allNodes.size(); k++) {
+                if (j != k && (allNodes.get(k).value != 0 || allNodes.get(k) == startNode)) {
+                    allNodes.get(j).edges.add(new Edge(allNodes.get(k), dists[j][k]));
+                }
+            }
+        }
+    
+        Set<Node> alreadyOpen = new HashSet<>();
+        alreadyOpen.add(startNode);
+        
+        System.out.println(getMax2(26, 0, 0, startNode, startNode, alreadyOpen));
         
     }
     
     public static void main(String[] args) throws Exception {
-        a();
+        //a();
         b();
     }
 }

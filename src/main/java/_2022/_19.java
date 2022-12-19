@@ -2,6 +2,7 @@ package _2022;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 
@@ -103,16 +104,16 @@ public class _19 {
         }
     }
     
-    public static void a() throws Exception {
+    private static List<Blueprint> parseBlueprints() throws IOException {
     
         BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input19.txt"));
         
         List<Blueprint> blueprints = new ArrayList<>();
         
         while (true) {
-        
+            
             final String line = fileReader.readLine();
-        
+            
             if (line == null) {
                 break;
             }
@@ -127,12 +128,18 @@ public class _19 {
             int geodeRobotObsidianCost = Integer.parseInt(split[3].substring(split[3].indexOf("and")+4, split[3].indexOf("obsidian")-1));
             
             Blueprint blueprint = new Blueprint(oreRobotOreCost, clayRobotOreCost, obsidianRobotOreCost, obsidianRobotClayCost, geodeRobotOreCost, geodeRobotObsidianCost);
-    
-            System.out.println(blueprint);
+            
+            //System.out.println(blueprint);
             
             blueprints.add(blueprint);
         }
+        return blueprints;
+    }
+    
+    public static void a() throws Exception {
         
+        List<Blueprint> blueprints = parseBlueprints();
+    
         //Blueprint blueprint = new Blueprint(4, 2, 3, 14, 2, 7);
         //Blueprint blueprint = new Blueprint(2, 3, 3, 8, 3, 12);
         
@@ -192,7 +199,7 @@ public class _19 {
                 }
         
                 // Ore robot build
-                if (state.ore >= blueprint.oreRobotOreCost && state.minute < 16) {
+                if (state.ore >= blueprint.oreRobotOreCost && state.minute < 9) {
                     State nextState = state.moveTime();
             
                     nextState.ore -= blueprint.oreRobotOreCost;
@@ -206,7 +213,7 @@ public class _19 {
     
             total += endStates.stream().mapToInt(v -> v.geodesCracked).max().getAsInt() * index++;
             
-            System.out.println(endStates.stream().mapToInt(v -> v.geodesCracked).max());
+            //System.out.println(endStates.stream().mapToInt(v -> v.geodesCracked).max());
         }
         
         System.out.println(total);
@@ -214,8 +221,82 @@ public class _19 {
     }
     
     public static void b() throws Exception {
+        
+        List<Blueprint> blueprints = parseBlueprints().subList(0, 3);
     
+        int product = 1;
+        
+        for (Blueprint blueprint : blueprints) {
+        
+            State startState = new State(0, 0, 0, 0, 1, 0, 0, 0, 0);
+        
+            Queue<State> allStates = new ArrayDeque<>();
+            allStates.add(startState);
+        
+            List<State> endStates = new ArrayList<>();
+        
+            while (!allStates.isEmpty()) {
+            
+                State state = allStates.remove();
+            
+                if (state.minute == 32) {
+                    endStates.add(state);
+                    continue;
+                }
+            
+                // Geode robot build
+                if (state.obsidian >= blueprint.geodeRobotObsidianCost && state.ore >= blueprint.geodeRobotOreCost) {
+                    State nextState = state.moveTime();
+                
+                    nextState.obsidian -= blueprint.geodeRobotObsidianCost;
+                    nextState.ore -= blueprint.geodeRobotOreCost;
+                    nextState.geodeRobots += 1;
+                
+                    allStates.add(nextState);
+                    continue;
+                }
+            
+                // Obsidian robot build
+                if (state.clay >= blueprint.obsidianRobotClayCost && state.ore >= blueprint.obsidianRobotOreCost) {
+                    State nextState = state.moveTime();
+                
+                    nextState.clay -= blueprint.obsidianRobotClayCost;
+                    nextState.ore -= blueprint.obsidianRobotOreCost;
+                    nextState.obsidianRobots += 1;
+                
+                    allStates.add(nextState);
+                    continue;
+                }
+            
+                // Clay robot build
+                if (state.ore >= blueprint.clayRobotOreCost && state.minute < 18) {
+                    State nextState = state.moveTime();
+                
+                    nextState.ore -= blueprint.clayRobotOreCost;
+                    nextState.clayRobots += 1;
+                
+                    allStates.add(nextState);
+                }
+            
+                // Ore robot build
+                if (state.ore >= blueprint.oreRobotOreCost && state.minute < 10) {
+                    State nextState = state.moveTime();
+                
+                    nextState.ore -= blueprint.oreRobotOreCost;
+                    nextState.oreRobots += 1;
+                
+                    allStates.add(nextState);
+                }
+            
+                allStates.add(state.moveTime());
+            }
+        
+            product *= endStates.stream().mapToInt(v -> v.geodesCracked).max().getAsInt();
+        
+            //System.out.println(endStates.stream().mapToInt(v -> v.geodesCracked).max());
+        }
     
+        System.out.println(product);
         
     }
     

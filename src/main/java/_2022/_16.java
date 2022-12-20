@@ -123,6 +123,22 @@ public class _16 {
         if (minutesLeft <= 0) {
             return 0;
         }
+    
+        if (minutesLeft < 20 && alreadyOpened.stream().mapToInt(v->v.value).sum() < 30) {
+            return 0;
+        }
+    
+        if (minutesLeft < 15 && alreadyOpened.stream().mapToInt(v->v.value).sum() < 70) {
+            return 0;
+        }
+    
+        if (minutesLeft < 10 && alreadyOpened.stream().mapToInt(v->v.value).sum() < 110) {
+            return 0;
+        }
+    
+        if (minutesLeft < 5 && alreadyOpened.stream().mapToInt(v->v.value).sum() < 150) {
+            return 0;
+        }
         
         int max = 0;
         

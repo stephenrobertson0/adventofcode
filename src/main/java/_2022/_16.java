@@ -66,24 +66,72 @@ public class _16 {
         
     }
     
+    private static class St {
+        int minutesLeft;
+        int minutes1InBag;
+        int minutes2InBag;
+        Node startNode1;
+        Node startNode2;
+        Set<Node> alreadyOpened;
+    
+        public St(
+                int minutesLeft,
+                int minutes1InBag,
+                int minutes2InBag,
+                Node startNode1,
+                Node startNode2,
+                Set<Node> alreadyOpened) {
+            this.minutesLeft = minutesLeft;
+            this.minutes1InBag = minutes1InBag;
+            this.minutes2InBag = minutes2InBag;
+            this.startNode1 = startNode1;
+            this.startNode2 = startNode2;
+            this.alreadyOpened = alreadyOpened;
+        }
+    
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            St st = (St)o;
+            return minutesLeft == st.minutesLeft && minutes1InBag == st.minutes1InBag
+                    && minutes2InBag == st.minutes2InBag
+                    && Objects.equals(startNode1, st.startNode1) && Objects.equals(
+                    startNode2,
+                    st.startNode2) && Objects.equals(alreadyOpened, st.alreadyOpened);
+        }
+    
+        @Override
+        public int hashCode() {
+            return Objects.hash(minutesLeft, minutes1InBag, minutes2InBag, startNode1, startNode2, alreadyOpened);
+        }
+    }
+    
+    static Map<St, Integer> cache = new HashMap<>();
+    
     private static int getMax2(int minutesLeft, int minutes1InBag, int minutes2InBag, Node startNode1, Node startNode2, Set<Node> alreadyOpened) {
+    
+        St key = new St(minutesLeft, minutes1InBag, minutes2InBag, startNode1, startNode2, alreadyOpened);
+        if (cache.containsKey(key)) {
+            return cache.get(key);
+        }
         
         if (minutesLeft <= 0) {
             return 0;
         }
         
         int max = 0;
-        Node selectedNode = null;
         
-        for (int j = 0; j < startNode1.edges.size(); j++) {
-            for (int k = j+1; k < startNode2.edges.size(); k++) {
+        for (Edge edge1 : startNode1.edges) {
+            for (Edge edge2 : startNode2.edges) {
                 
-                Edge edge1 = startNode1.edges.get(j);
-                Edge edge2 = startNode1.edges.get(k);
-                
-                /*if (edge1.dest == edge2.dest) {
+                if (edge1.dest == edge2.dest) {
                     continue;
-                }*/
+                }
     
                 if (edge1.distance <= minutes1InBag && !alreadyOpened.contains(edge1.dest) && edge2.distance <= minutes2InBag && !alreadyOpened.contains(edge2.dest)) {
                     Set<Node> newAlreadyOpened = new HashSet<>(alreadyOpened);
@@ -95,7 +143,6 @@ public class _16 {
                     int amount = getMax2(minutesLeft - 1, minutes1InBag - edge1.distance, minutes2InBag - edge2.distance, edge1.dest, edge2.dest, newAlreadyOpened);
                     if (amount > max) {
                         max = amount;
-                        selectedNode = edge1.dest;
                     }
                     
                 } else if (edge1.distance <= minutes1InBag && !alreadyOpened.contains(edge1.dest)) {
@@ -108,7 +155,6 @@ public class _16 {
                     int amount = getMax2(minutesLeft - 1, minutes1InBag - edge1.distance, minutes2InBag+1, edge1.dest, startNode2, newAlreadyOpened);
                     if (amount > max) {
                         max = amount;
-                        selectedNode = edge1.dest;
                     }
                 } else if (edge2.distance <= minutes2InBag && !alreadyOpened.contains(edge2.dest)) {
     
@@ -120,23 +166,22 @@ public class _16 {
                     int amount = getMax2(minutesLeft - 1, minutes1InBag+1,minutes2InBag - edge2.distance, startNode1, edge2.dest, newAlreadyOpened);
                     if (amount > max) {
                         max = amount;
-                        selectedNode = edge2.dest;
+                    }
+                } else {
+                    int amount = getMax2(minutesLeft - 1, minutes1InBag+1,minutes2InBag+1, startNode1, startNode2, alreadyOpened);
+                    if (amount > max) {
+                        max = amount;
                     }
                 }
                 
             }
         }
     
-        //System.out.println("Max: " + max);
-        //System.out.println("Already Open: " + alreadyOpened);
+        int i = alreadyOpened.stream().mapToInt(v -> v.value).sum() + max;
         
-        if (selectedNode == null) {
-            //System.out.println("Not opening anything: " + (alreadyOpened.stream().mapToInt(v -> v.value).sum() + getMax2(minutesLeft-1, minutes1InBag+1, minutes2InBag +1, startNode1, startNode2, alreadyOpened)));
-            
-            return alreadyOpened.stream().mapToInt(v -> v.value).sum() + getMax2(minutesLeft-1, minutes1InBag+1, minutes2InBag +1, startNode1, startNode2, alreadyOpened);
-        } else {
-            return alreadyOpened.stream().mapToInt(v -> v.value).sum() + max;
-        }
+        cache.put(new St(minutesLeft, minutes1InBag, minutes2InBag, startNode1, startNode2, alreadyOpened), i);
+        
+        return i;
         
     }
     
@@ -285,6 +330,47 @@ public class _16 {
         System.out.println(totalPressure);
     }
     
+    private static class State {
+        
+        private int minutesLeft;
+        private int minutesAvailable1;
+        private int minutesAvailable2;
+        private Node location1;
+        private Node location2;
+        private Set<Node> openValves;
+        private int pressureReleased;
+        private String log = "";
+    
+        public State(
+                int minutesLeft,
+                int minutesAvailable1,
+                int minutesAvailable2,
+                Node location1,
+                Node location2,
+                Set<Node> openValves,
+                int pressureReleased) {
+            this.minutesLeft = minutesLeft;
+            this.minutesAvailable1 = minutesAvailable1;
+            this.minutesAvailable2 = minutesAvailable2;
+            this.location1 = location1;
+            this.location2 = location2;
+            this.openValves = openValves;
+            this.pressureReleased = pressureReleased;
+        }
+        
+        public State clone() {
+            State state = new State(minutesLeft,
+                    minutesAvailable1,
+                    minutesAvailable2,
+                    location1,
+                    location2,
+                    new HashSet<>(openValves),
+                    pressureReleased);
+            //state.log = log;
+            return state;
+        }
+    }
+    
     public static void b() throws Exception {
     
         BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2022/input/input16.txt"));
@@ -387,13 +473,111 @@ public class _16 {
     
         Set<Node> alreadyOpen = new HashSet<>();
         alreadyOpen.add(startNode);
+    
+        /*State startState = new State(26, 0, 0, startNode, startNode, alreadyOpen, 0);
+        
+        Queue<State> allStates = new ArrayDeque<>();
+        allStates.add(startState);
+    
+        List<State> endStates = new ArrayList<>();
+    
+        while (!allStates.isEmpty()) {
+    
+            State state = allStates.remove();
+            
+            boolean didMove = false;
+    
+            if (state.minutesLeft == 0) {
+                endStates.add(state);
+                continue;
+            }
+            
+            for (Edge edge1 : state.location1.edges) {
+                for (Edge edge2 : state.location2.edges) {
+                    
+                    if (edge1.dest == edge2.dest) {
+                        continue;
+                    }
+                    
+                    Node moveTo1 = null;
+                    Node moveTo2 = null;
+                    
+                    if (edge1.distance <= state.minutesAvailable1 && !state.openValves.contains(edge1.dest)) {
+                        moveTo1 = edge1.dest;
+                    }
+    
+                    if (edge2.distance <= state.minutesAvailable2 && !state.openValves.contains(edge2.dest)) {
+                        moveTo2 = edge2.dest;
+                    }
+                    
+                    State newState = state.clone();
+                    
+                    newState.minutesLeft -= 1;
+                    //newState.pressureReleased += state.openValves.stream().mapToInt(v->v.value).sum();
+                    //newState.log += "Open valves: " + state.openValves + " adding: " + state.openValves.stream().mapToInt(v->v.value).sum() + "\n";
+                    
+                    if (moveTo1 != null) {
+                        newState.location1 = moveTo1;
+                        newState.minutesAvailable1 -= edge1.distance;
+                        newState.openValves.add(moveTo1);
+                        newState.pressureReleased += moveTo1.value * (newState.minutesLeft);
+                        //newState.log += "Opening " + newState.location1 + "\n";
+                        //newState.log += "Minutes left are now: " + newState.minutesLeft + "\n";
+                    } else {
+                        newState.minutesAvailable1 += 1;
+                    }
+    
+                    if (moveTo2 != null) {
+                        newState.location2 = moveTo2;
+                        newState.minutesAvailable2 -= edge2.distance;
+                        newState.openValves.add(moveTo2);
+                        newState.pressureReleased += moveTo2.value * (newState.minutesLeft);
+                        //newState.log += "Opening " + newState.location2 + "\n";
+                        //newState.log += "Minutes left are now: " + newState.minutesLeft + "\n";
+                    } else {
+                        newState.minutesAvailable2 += 1;
+                    }
+                    
+                    if (moveTo1 != null || moveTo2 != null) {
+                        didMove = true;
+                        allStates.add(newState);
+                    }
+        
+                }
+                
+            }
+            
+            State newState = state.clone();
+            newState.minutesLeft -= 1;
+            //newState.log += "Nothing new opened, adding: " + state.openValves + ": " + state.openValves.stream().mapToInt(v->v.value).sum() + "\n";
+            //newState.pressureReleased += state.openValves.stream().mapToInt(v->v.value).sum();
+            newState.minutesAvailable1 += 1;
+            newState.minutesAvailable2 += 1;
+            
+            allStates.add(newState);
+        }
+    
+        System.out.println(endStates.stream().mapToInt(v->v.pressureReleased).max());
+    
+        int max = 0;
+        State selectedState = null;
+        
+        for (State state : endStates) {
+            if (state.pressureReleased > max) {
+                max = state.pressureReleased;
+                selectedState = state;
+            }
+            
+        }
+    
+        System.out.println(selectedState.log);*/
         
         System.out.println(getMax2(26, 0, 0, startNode, startNode, alreadyOpen));
         
     }
     
     public static void main(String[] args) throws Exception {
-        //a();
+        a();
         b();
     }
 }

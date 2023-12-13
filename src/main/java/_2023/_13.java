@@ -57,8 +57,6 @@ public class _13 {
 
     private static int findHorizontalReflectionWithSmudge(List<String> mirror, int exclude) {
 
-        boolean smudgeFound = false;
-
         for (int j = 0; j < mirror.size() - 1; j++) {
 
             if (j == exclude) {
@@ -69,6 +67,7 @@ public class _13 {
             int start2 = j+1;
 
             boolean reflect = true;
+            boolean smudgeFound = false;
 
             while (reflect) {
                 if (start1 < 0 || start2 >= mirror.size()) {
@@ -198,6 +197,7 @@ public class _13 {
             int horizontal = findHorizontalReflection(m);
             int horizontalWithSmudge = findHorizontalReflectionWithSmudge(m, horizontal);
 
+            /*
             for (String s : m) {
                 System.out.println(s);
             }
@@ -207,6 +207,7 @@ public class _13 {
             System.out.println("horizontal smudge: " + horizontalWithSmudge);
             System.out.println();
             System.out.println();
+            */
 
             if (horizontalWithSmudge != -1 && horizontalWithSmudge != horizontal) {
 
@@ -218,6 +219,7 @@ public class _13 {
             int vertical = findHorizontalReflection(invert);
             int verticalWithSmudge = findHorizontalReflectionWithSmudge(invert, vertical);
 
+            /*
             for (String s : invert) {
                 System.out.println(s);
             }
@@ -227,10 +229,9 @@ public class _13 {
             System.out.println("vertical smudge: " + verticalWithSmudge);
             System.out.println();
             System.out.println();
+            */
 
             if (verticalWithSmudge != -1 && verticalWithSmudge != vertical) {
-
-                System.out.println(verticalWithSmudge+1);
 
                 total += verticalWithSmudge+1;
             }
@@ -242,7 +243,7 @@ public class _13 {
     }
     
     public static void main(String[] args) throws Exception {
-        //a();
+        a();
         b();
     }
 }

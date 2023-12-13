@@ -2,11 +2,9 @@ package _2023;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
@@ -138,6 +136,77 @@ public class _12 {
 
     }
 
+    private static List<Integer> getCountsBetweenDots(String s, List<Integer> hashCounts) {
+
+        s += ".";
+
+        int hashCount = 0;
+
+        for (int h : hashCounts) {
+            hashCount+=h;
+        }
+
+        int strHashCount = 0;
+
+        int j;
+
+        for (j = 0; j < s.length(); j++) {
+            if (s.charAt(j) == '#') {
+                strHashCount++;
+            }
+
+            if (strHashCount == hashCount) {
+                break;
+            }
+        }
+
+        if (j != s.length()) {
+            s = s.substring(j + 1);
+        }
+
+        List<Integer> result = new ArrayList<>();
+
+        int count = 0;
+
+        for (char c : s.toCharArray()) {
+
+            if (c == '#' || c == '?') {
+                count++;
+            }
+
+            if (c == '.' && count > 0) {
+                result.add(count);
+                count = 0;
+            }
+
+        }
+
+        return result;
+    }
+
+    private static boolean couldFitIntoCounts(List<Integer> countsToMatch, List<Integer> counts) {
+
+        int countsIndex = 0;
+
+        for (int j = 0; j < countsToMatch.size(); j++) {
+
+            if (countsIndex >= counts.size()) {
+                return false;
+            }
+
+            if (countsToMatch.get(j) > counts.get(countsIndex)) {
+                countsIndex++;
+                j--;
+                continue;
+            }
+
+            counts.set(countsIndex, counts.get(countsIndex) - countsToMatch.get(j) - 1);
+        }
+
+        return true;
+
+    }
+
     private static int getMatchCount(Configuration configuration) {
 
         Stack<Configuration> toCheck = new Stack<>();
@@ -182,14 +251,27 @@ public class _12 {
 
             }
 
-            //System.out.println("option1: " + new String(option1.toCharArray()));
+            if (couldMatch) {
+                List<Integer> remainingNumbers = new ArrayList<>();
+
+                for (int j = hashCounts.size(); j < next.getNumbers().size(); j++) {
+                    remainingNumbers.add(next.getNumbers().get(j));
+                }
+
+                if (!couldFitIntoCounts(remainingNumbers, getCountsBetweenDots(option1, hashCounts))) {
+                    couldMatch = false;
+                }
+
+            }
+
+            //System.out.println("option1: " + option1);
             //System.out.println("hash counts: " + hashCounts);
-            //System.out.println("numbers: " + next.getNumbers());
+            //System.out.println("numbers    : " + next.getNumbers());
             //System.out.println("couldMatch: " + couldMatch);
             //System.out.println();
 
             if (couldMatch) {
-                toCheck.push(new Configuration(option1, next.getNumbers()));
+                toCheck.add(new Configuration(option1, next.getNumbers()));
             }
 
             // Option 2
@@ -212,9 +294,22 @@ public class _12 {
 
             }
 
-            //System.out.println("option2: " + new String(option2.toCharArray()));
+            if (couldMatch) {
+                List<Integer> remainingNumbers = new ArrayList<>();
+
+                for (int j = hashCounts.size(); j < next.getNumbers().size(); j++) {
+                    remainingNumbers.add(next.getNumbers().get(j));
+                }
+
+                if (!couldFitIntoCounts(remainingNumbers, getCountsBetweenDots(option2, hashCounts))) {
+                    couldMatch = false;
+                }
+
+            }
+
+            //System.out.println("option2: " + option2);
             //System.out.println("hash counts: " + hashCounts);
-            //System.out.println("numbers: " + next.getNumbers());
+            //System.out.println("numbers    : " + next.getNumbers());
             //System.out.println("couldMatch: " + couldMatch);
             //System.out.println();
 
@@ -303,11 +398,12 @@ public class _12 {
 
             long startTime = System.currentTimeMillis();
 
-            System.out.println(getMatchCount(configuration));
+            int matchCount = getMatchCount(configuration);
+            System.out.println(matchCount);
 
             System.out.println("Time taken: " + (System.currentTimeMillis() - startTime));
 
-            total += getMatchCount(configuration);
+            total += matchCount;
 
         }
 
@@ -320,5 +416,10 @@ public class _12 {
     public static void main(String[] args) throws Exception {
         a();
         b();
+
+        //System.out.println(getCountsBetweenQuestions(".#....##......##..........#..#.#..???..????????.???..????????.???..??", Arrays.asList(1, 2, 2, 1, 1, 1)));
+        //System.out.println(couldFitIntoCounts(Arrays.asList(1, 1, 1), Arrays.asList(2, 2, 2)));
+        //System.out.println(couldFitIntoCounts(Arrays.asList(1, 1, 1), Arrays.asList(2, 2)));
+        //System.out.println(couldFitIntoCounts(Arrays.asList(2, 2, 2), Arrays.asList(1, 1, 1)));
     }
 }

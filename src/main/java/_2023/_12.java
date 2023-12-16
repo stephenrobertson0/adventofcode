@@ -2,12 +2,11 @@ package _2023;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.Stack;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -103,221 +102,44 @@ public class _12 {
 
     }
 
-    private static List<Integer> getHashCountsIgnoringWildcards(String config) {
+    private static Map<String, Long> cache = new HashMap<>();
 
-        List<Integer> result = new ArrayList<>();
+    private static long getMatchCount(Configuration configuration, int currentPosInString, int currentPosInBlocks, int lengthOfCurrentHashes) {
 
-        String s = config;
+        String key = currentPosInString + "," + currentPosInBlocks + "," + lengthOfCurrentHashes;
 
-        s += ".";
+        if (cache.containsKey(key)) {
+            return cache.get(key);
+        }
 
-        int count = 0;
-
-        for (char c : s.toCharArray()) {
-
-            if (c == '?') {
-                break;
+        if (currentPosInString == configuration.getChars().length()) {
+            if (currentPosInBlocks == configuration.getNumbers().size() && lengthOfCurrentHashes == 0) {
+                return 1;
+            } else if (currentPosInBlocks == configuration.getNumbers().size() - 1 && configuration.getNumbers().get(currentPosInBlocks) == lengthOfCurrentHashes) {
+                return 1;
+            } else {
+                return 0;
             }
+        }
 
-            if (c == '#') {
-                count++;
-            }
+        long count = 0;
 
-            if (c == '.' && count > 0) {
-                result.add(count);
-                count = 0;
+        for (char c : Arrays.asList('.', '#')) {
+
+            if (c == configuration.getChars().charAt(currentPosInString) || configuration.getChars().charAt(currentPosInString) == '?') {
+                if (c == '.' && lengthOfCurrentHashes == 0) {
+                    count += getMatchCount(configuration, currentPosInString + 1, currentPosInBlocks, 0);
+                } else if (c == '.' && lengthOfCurrentHashes > 0 && currentPosInBlocks < configuration.getNumbers().size()
+                        && configuration.getNumbers().get(currentPosInBlocks) == lengthOfCurrentHashes) {
+                    count += getMatchCount(configuration, currentPosInString + 1, currentPosInBlocks + 1, 0);
+                } else if (c == '#') {
+                    count += getMatchCount(configuration, currentPosInString + 1, currentPosInBlocks, lengthOfCurrentHashes + 1);
+                }
             }
 
         }
 
-        //System.out.println("Hash counts: " + result);
-
-        return result;
-
-    }
-
-    private static List<Integer> getCountsBetweenDots(String s, List<Integer> hashCounts) {
-
-        s += ".";
-
-        int hashCount = 0;
-
-        for (int h : hashCounts) {
-            hashCount+=h;
-        }
-
-        int strHashCount = 0;
-
-        int j;
-
-        for (j = 0; j < s.length(); j++) {
-            if (s.charAt(j) == '#') {
-                strHashCount++;
-            }
-
-            if (strHashCount == hashCount) {
-                break;
-            }
-        }
-
-        if (j != s.length()) {
-            s = s.substring(j + 1);
-        }
-
-        List<Integer> result = new ArrayList<>();
-
-        int count = 0;
-
-        for (char c : s.toCharArray()) {
-
-            if (c == '#' || c == '?') {
-                count++;
-            }
-
-            if (c == '.' && count > 0) {
-                result.add(count);
-                count = 0;
-            }
-
-        }
-
-        return result;
-    }
-
-    private static boolean couldFitIntoCounts(List<Integer> countsToMatch, List<Integer> counts) {
-
-        int countsIndex = 0;
-
-        for (int j = 0; j < countsToMatch.size(); j++) {
-
-            if (countsIndex >= counts.size()) {
-                return false;
-            }
-
-            if (countsToMatch.get(j) > counts.get(countsIndex)) {
-                countsIndex++;
-                j--;
-                continue;
-            }
-
-            counts.set(countsIndex, counts.get(countsIndex) - countsToMatch.get(j) - 1);
-        }
-
-        return true;
-
-    }
-
-    private static int getMatchCount(Configuration configuration) {
-
-        Stack<Configuration> toCheck = new Stack<>();
-        toCheck.add(configuration);
-
-        int count = 0;
-
-        while (!toCheck.isEmpty()) {
-            Configuration next = toCheck.pop();
-
-            String str = next.getChars();
-
-            if (!str.contains("?")) {
-
-                if (getHashCounts(next.getChars()).equals(next.getNumbers())) {
-                    count++;
-                }
-
-                continue;
-            }
-
-            String option1 = str.replaceFirst("\\?", ".");
-            String option2 = str.replaceFirst("\\?", "#");
-
-            // Option 1
-
-            List<Integer> hashCounts = getHashCountsIgnoringWildcards(option1);
-
-            boolean couldMatch = true;
-
-            for (int j = 0; j < hashCounts.size(); j++) {
-
-                if (j >= next.getNumbers().size()) {
-                    couldMatch = false;
-                    break;
-                }
-
-                if (next.getNumbers().get(j) != hashCounts.get(j)) {
-                    couldMatch = false;
-                    break;
-                }
-
-            }
-
-            if (couldMatch) {
-                List<Integer> remainingNumbers = new ArrayList<>();
-
-                for (int j = hashCounts.size(); j < next.getNumbers().size(); j++) {
-                    remainingNumbers.add(next.getNumbers().get(j));
-                }
-
-                if (!couldFitIntoCounts(remainingNumbers, getCountsBetweenDots(option1, hashCounts))) {
-                    couldMatch = false;
-                }
-
-            }
-
-            //System.out.println("option1: " + option1);
-            //System.out.println("hash counts: " + hashCounts);
-            //System.out.println("numbers    : " + next.getNumbers());
-            //System.out.println("couldMatch: " + couldMatch);
-            //System.out.println();
-
-            if (couldMatch) {
-                toCheck.add(new Configuration(option1, next.getNumbers()));
-            }
-
-            // Option 2
-
-            hashCounts = getHashCountsIgnoringWildcards(option2);
-
-            couldMatch = true;
-
-            for (int j = 0; j < hashCounts.size(); j++) {
-
-                if (j >= next.getNumbers().size()) {
-                    couldMatch = false;
-                    break;
-                }
-
-                if (next.getNumbers().get(j) != hashCounts.get(j)) {
-                    couldMatch = false;
-                    break;
-                }
-
-            }
-
-            if (couldMatch) {
-                List<Integer> remainingNumbers = new ArrayList<>();
-
-                for (int j = hashCounts.size(); j < next.getNumbers().size(); j++) {
-                    remainingNumbers.add(next.getNumbers().get(j));
-                }
-
-                if (!couldFitIntoCounts(remainingNumbers, getCountsBetweenDots(option2, hashCounts))) {
-                    couldMatch = false;
-                }
-
-            }
-
-            //System.out.println("option2: " + option2);
-            //System.out.println("hash counts: " + hashCounts);
-            //System.out.println("numbers    : " + next.getNumbers());
-            //System.out.println("couldMatch: " + couldMatch);
-            //System.out.println();
-
-            if (couldMatch) {
-                toCheck.push(new Configuration(option2, next.getNumbers()));
-            }
-
-        }
+        cache.put(key, count);
 
         return count;
 
@@ -396,12 +218,9 @@ public class _12 {
 
         for (Configuration configuration : configurations) {
 
-            long startTime = System.currentTimeMillis();
+            cache = new HashMap<>();
 
-            int matchCount = getMatchCount(configuration);
-            System.out.println(matchCount);
-
-            System.out.println("Time taken: " + (System.currentTimeMillis() - startTime));
+            long matchCount = getMatchCount(configuration, 0, 0, 0);
 
             total += matchCount;
 
@@ -416,10 +235,5 @@ public class _12 {
     public static void main(String[] args) throws Exception {
         a();
         b();
-
-        //System.out.println(getCountsBetweenQuestions(".#....##......##..........#..#.#..???..????????.???..????????.???..??", Arrays.asList(1, 2, 2, 1, 1, 1)));
-        //System.out.println(couldFitIntoCounts(Arrays.asList(1, 1, 1), Arrays.asList(2, 2, 2)));
-        //System.out.println(couldFitIntoCounts(Arrays.asList(1, 1, 1), Arrays.asList(2, 2)));
-        //System.out.println(couldFitIntoCounts(Arrays.asList(2, 2, 2), Arrays.asList(1, 1, 1)));
     }
 }

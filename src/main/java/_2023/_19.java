@@ -252,12 +252,12 @@ public class _19 {
             State state = states.pop();
 
             if ("R".equals(state.getLocation())) {
-                System.out.println("R hit");
+                //System.out.println("R hit");
                 continue;
             }
 
             if ("A".equals(state.getLocation())) {
-                System.out.println("A hit: " + state);
+                //System.out.println("A hit: " + state);
                 total += (long)(state.getMinAndMaxMap().get('x').getMax() - state.getMinAndMaxMap().get('x').getMin() + 1) * (
                         state.getMinAndMaxMap().get('m').getMax() - state.getMinAndMaxMap().get('m').getMin() + 1) * (
                         state.getMinAndMaxMap().get('a').getMax() - state.getMinAndMaxMap().get('a').getMin() + 1) * (
@@ -279,7 +279,7 @@ public class _19 {
                     break;
                 }
 
-                MinAndMax minAndMax = state.getMinAndMaxMap().get(cond.getRating());
+                MinAndMax minAndMax = passingThrough.get(cond.getRating());
                 if (cond.getCondition() == '<') {
                     if (minAndMax.getMin() < cond.getValue() && minAndMax.getMax() < cond.getValue()) {
 
@@ -315,7 +315,6 @@ public class _19 {
         }
 
         System.out.println(total);
-        System.out.println(4000L*4000*4000*4000);
 
     }
     

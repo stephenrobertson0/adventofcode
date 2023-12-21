@@ -169,6 +169,14 @@ public class _21 {
 
         BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2023/input/input21.txt"));
 
+        int size = 131;
+
+        char[][] garden = new char[size][size];
+
+        Position current = null;
+
+        int yIndex = 0;
+
         while (true) {
             final String line = fileReader.readLine();
 
@@ -176,7 +184,77 @@ public class _21 {
                 break;
             }
 
+            for (int j = 0; j < line.length(); j++) {
+
+                if (line.charAt(j) == 'S') {
+                    current = new Position(j, yIndex);
+                    garden[j][yIndex] = '.';
+                } else {
+                    garden[j][yIndex] = line.charAt(j);
+                }
+            }
+
+            yIndex++;
+
         }
+
+        Queue<State> states = new ArrayDeque<>();
+        states.add(new State(current, 0));
+
+        int max = 2000;
+
+        Set<Position> success = new HashSet<>();
+        Set<Position> visited = new HashSet<>();
+
+        while (!states.isEmpty()) {
+
+            State state = states.remove();
+
+            if (visited.contains(state.getPosition())) {
+                continue;
+            }
+
+            if (state.getStepsTaken() <= max && state.getStepsTaken() % 2 == 0) {
+                success.add(state.getPosition());
+            }
+
+            if (state.getStepsTaken() == max) {
+                continue;
+            }
+
+            visited.add(state.getPosition());
+
+            for (int j = 0; j < 4; j++) {
+
+                int x = state.getPosition().getX() + intervals[j][0];
+                int y = state.getPosition().getY() + intervals[j][1];
+
+                int xx = x;
+                int yy = y;
+
+                if (x < 0 || x >= size) {
+                    xx = (x + size*1000) % size;
+                }
+
+                if (y < 0 || y >= size) {
+                    yy = (y + size*1000) % size;
+                }
+
+                if (garden[xx][yy] == '#') {
+                    continue;
+                }
+
+                State newState = new State(new Position(x, y), state.getStepsTaken()+1);
+
+                if (!visited.contains(new Position(x, y))) {
+                    states.add(newState);
+                }
+
+            }
+
+        }
+
+        System.out.println(success.size());
 
     }
     

@@ -50,14 +50,10 @@ public class _21 {
     private static class State {
         private Position position;
         private int stepsTaken;
-        private String garden;
-        private char[][] gardenC;
 
-        public State(Position position, int stepsTaken, String garden, char[][] gardenC) {
+        public State(Position position, int stepsTaken) {
             this.position = position;
             this.stepsTaken = stepsTaken;
-            this.garden = garden;
-            this.gardenC = gardenC;
         }
 
         public Position getPosition() {
@@ -66,14 +62,6 @@ public class _21 {
 
         public int getStepsTaken() {
             return stepsTaken;
-        }
-
-        public String getGarden() {
-            return garden;
-        }
-
-        public char[][] getGardenC() {
-            return gardenC;
         }
 
         @Override
@@ -92,34 +80,6 @@ public class _21 {
         public int hashCode() {
             return Objects.hash(position, stepsTaken);
         }
-    }
-
-    private static String getGarden(char[][] g) {
-
-        StringBuilder sb = new StringBuilder();
-
-        for (int j = 0; j < g.length; j++) {
-            for (int k = 0; k < g.length; k++) {
-                sb.append(g[k][j]);
-            }
-        }
-
-        return sb.toString();
-
-    }
-
-    private static char[][] cloneGarden(char[][] g) {
-
-        char[][] clone = new char[g.length][g.length];
-
-        for (int j = 0; j < g.length; j++) {
-            for (int k = 0; k < g.length; k++) {
-                clone[k][j] = (g[k][j]);
-            }
-        }
-
-        return clone;
-
     }
 
     private static int[][] intervals = new int[][] { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
@@ -157,10 +117,8 @@ public class _21 {
 
         }
 
-        System.out.println(getGarden(garden));
-
         Stack<State> states = new Stack<>();
-        states.add(new State(current, 0, getGarden(garden), garden));
+        states.add(new State(current, 0));
 
         int max = 64;
 
@@ -190,17 +148,11 @@ public class _21 {
 
                 if (x >= 0 && x < size && y >= 0 && y < size) {
 
-                    if (state.getGardenC()[x][y] == '#') {
+                    if (garden[x][y] == '#') {
                         continue;
                     }
 
-                    char[][] newGarden = cloneGarden(state.getGardenC());
-
-                    if (newGarden[x][y] == '.') {
-                        newGarden[x][y] = 'O';
-                    }
-
-                    State newState = new State(new Position(x, y), state.getStepsTaken()+1, getGarden(newGarden), newGarden);
+                    State newState = new State(new Position(x, y), state.getStepsTaken()+1);
 
                     states.add(newState);
                 }

@@ -93,8 +93,8 @@ public class _22 {
         }
     }
 
-    private static int zSize = 500;
-    private static int xySize = 20;
+    private static int zSize = 400;
+    private static int xySize = 10;
 
     private static int[][][] getSpace(List<Brick> bricks) {
         int[][][] space = new int[xySize][xySize][zSize];
@@ -232,6 +232,8 @@ public class _22 {
 
         BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2023/input/input22.txt"));
 
+        List<Brick> bricks = new ArrayList<>();
+
         while (true) {
             final String line = fileReader.readLine();
 
@@ -239,7 +241,115 @@ public class _22 {
                 break;
             }
 
+            List<Integer> corner1 = Arrays.stream(line.split("~")[0].split(",")).map(v->Integer.parseInt(v)).collect(Collectors.toList());
+            List<Integer> corner2 = Arrays.stream(line.split("~")[1].split(",")).map(v->Integer.parseInt(v)).collect(Collectors.toList());
+
+            bricks.add(new Brick(new Coord(corner1.get(0), corner1.get(1), corner1.get(2)), new Coord(corner2.get(0), corner2.get(1), corner2.get(2))));
         }
+
+        bricks.sort((a,b)-> new Integer(a.getMinZ()).compareTo(b.getMinZ()));
+
+        System.out.println(bricks);
+
+        for (int j = 0; j < bricks.size(); j++) {
+
+            int[][][] space = getSpace(bricks);
+            Brick brick = bricks.get(j);
+
+            while (true) {
+                int minZ = brick.getMinZ();
+                if (minZ == 1) {
+                    break;
+                }
+
+                boolean canMove = true;
+
+                for (int x = brick.getMinX(); x <= brick.getMaxX(); x++) {
+                    for (int y = brick.getMinY(); y <= brick.getMaxY(); y++) {
+                        if (space[x][y][minZ-1] == 1) {
+                            canMove = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (!canMove) {
+                    break;
+                }
+
+                brick.getCoord1().setZ(brick.getCoord1().getZ() - 1);
+                brick.getCoord2().setZ(brick.getCoord2().getZ() - 1);
+
+            }
+
+        }
+
+        int count = 0;
+
+        bricks.sort((a,b)-> new Integer(a.getMinZ()).compareTo(b.getMinZ()));
+
+        List<Brick> bricksClone = bricks;
+
+        for (int j = 0; j < bricks.size(); j++) {
+
+            Brick brick = bricks.get(j);
+
+            bricksClone.remove(brick);
+
+            int brickMoveCount = 0;
+
+            for (int k = 0; k < bricksClone.size(); k++) {
+
+                int[][][] space = getSpace(bricksClone);
+
+                Brick brick1 = bricksClone.get(k);
+
+                boolean didMove = false;
+
+                while (true) {
+                    int minZ = brick1.getMinZ();
+                    if (minZ == 1) {
+                        break;
+                    }
+
+                    boolean canMove = true;
+
+                    for (int x = brick1.getMinX(); x <= brick1.getMaxX(); x++) {
+                        for (int y = brick1.getMinY(); y <= brick1.getMaxY(); y++) {
+                            if (space[x][y][minZ-1] == 1) {
+                                canMove = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!canMove) {
+                        break;
+                    }
+
+                    didMove = true;
+                    brick1.getCoord1().setZ(brick1.getCoord1().getZ() - 1);
+                    brick1.getCoord2().setZ(brick1.getCoord2().getZ() - 1);
+
+                }
+
+                if (didMove) {
+                    brickMoveCount++;
+                    bricksClone.sort((a,b)-> new Integer(a.getMinZ()).compareTo(b.getMinZ()));
+                }
+
+            }
+
+            if (brickMoveCount == 0) {
+                bricksClone.add(j, brick);
+                bricksClone.sort((a,b)-> new Integer(a.getMinZ()).compareTo(b.getMinZ()));
+            }
+
+            count += brickMoveCount;
+
+        }
+
+        System.out.println(count);
     }
     
     public static void main(String[] args) throws Exception {

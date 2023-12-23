@@ -4,10 +4,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 
 
 public class _23 {
@@ -150,38 +154,11 @@ public class _23 {
 
     }
 
-    private static class NodeAndDistance {
-        private Node node;
-        private int distance;
-
-        public NodeAndDistance(Node node, int distance) {
-            this.node = node;
-            this.distance = distance;
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
-        public int getDistance() {
-            return distance;
-        }
-
-        @Override
-        public String toString() {
-            return "NodeAndDistance{" +
-                    "node=" + node +
-                    ", distance=" + distance +
-                    '}';
-        }
-    }
-
-    private static class Node {
+    private static class Point {
         private int x;
         private int y;
-        List<NodeAndDistance> neighbours;
 
-        public Node(int x, int y) {
+        public Point(int x, int y) {
             this.x = x;
             this.y = y;
         }
@@ -194,100 +171,76 @@ public class _23 {
             return y;
         }
 
-        public List<NodeAndDistance> getNeighbours() {
-            return neighbours;
+        @Override
+        public String toString() {
+            return "Point{" +
+                    "x=" + x +
+                    ", y=" + y +
+                    '}';
         }
 
-        public void setNeighbours(List<NodeAndDistance> neighbours) {
-            this.neighbours = neighbours;
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Point point = (Point)o;
+            return x == point.x && y == point.y;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
+    }
+
+    private static class PointAndDistance {
+
+        private Point point;
+        private int distance;
+
+        public PointAndDistance(Point point, int distance) {
+            this.point = point;
+            this.distance = distance;
+        }
+
+        public Point getPoint() {
+            return point;
+        }
+
+        public int getDistance() {
+            return distance;
         }
 
         @Override
         public String toString() {
-            return "Node{" +
-                    "x=" + x +
-                    ", y=" + y +
-                    ", neighbours=" + neighbours +
+            return "PointAndDistance{" +
+                    "point=" + point +
+                    ", distance=" + distance +
                     '}';
         }
     }
 
-    private static int countEmptyAdj(int x, int y, char[][] forest, Set<String> visited) {
+    private static int countEmptyAdj(int x, int y, char[][] forest) {
         int count = 0;
 
         for (int i = 0; i < 4; i++) {
             int newX = x + intervals[i][0];
             int newY = y + intervals[i][1];
 
-            if (newY == -1) {
+            if (newX == -1 || newY == -1 || newX == size || newY == size) {
                 continue;
             }
 
-            if (forest[newX][newY] != '#' && !visited.contains(newX + "," + newY)) {
+            if (forest[newX][newY] != '#') {
                 count++;
             }
         }
 
         return count;
-    }
-
-    private static List<NodeAndDistance> getNeighbours(Node node, char[][] forest, Set<String> visited) {
-
-        visited.add(node.getX() + "," + node.getY());
-        State start = new State(node.getX(), node.getY(), 0, visited);
-
-        Queue<State> queue = new ArrayDeque<>();
-        queue.add(start);
-
-        List<NodeAndDistance> neighbours = new ArrayList<>();
-
-        while (!queue.isEmpty()) {
-
-            State state = queue.remove();
-
-            if ((state.getY() == size - 1 || countEmptyAdj(state.getX(), state.getY(), forest, visited) >= 2) && !(state.getX() == node.getX() && state.getY() == node.getY())) {
-
-                neighbours.add(new NodeAndDistance(new Node(state.getX(), state.getY()), state.getSteps()));
-
-                continue;
-            }
-
-            for (int i = 0; i < 4; i++) {
-                int newX = state.getX() + intervals[i][0];
-                int newY = state.getY() + intervals[i][1];
-
-                if (newY == -1) {
-                    continue;
-                }
-
-                if (forest[newX][newY] != '#' && !visited.contains(newX + "," + newY)) {
-                    queue.add(new State(newX, newY, state.getSteps()+1, visited));
-                    visited.add(newX + "," + newY);
-                }
-            }
-
-        }
-
-        return neighbours;
-
-    }
-
-    private static class StateB {
-        private Node node;
-        private Set<String> visited;
-
-        public StateB(Node node, Set<String> visited) {
-            this.node = node;
-            this.visited = visited;
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
-        public Set<String> getVisited() {
-            return visited;
-        }
     }
 
     public static void b() throws Exception {
@@ -313,37 +266,113 @@ public class _23 {
 
         }
 
-        Set<String> visited = new HashSet<>();
+        List<Point> nodes = new ArrayList<>();
+        nodes.add(new Point(1, 0));
+        nodes.add(new Point(size - 2, size - 1));
 
-        Node node = new Node(1, 0);
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
 
-        Queue<StateB> queue = new ArrayDeque<>();
-        queue.add(new StateB(node, visited));
+                char c = forest[i][j];
+
+                if (c != '#') {
+                    if (countEmptyAdj(i, j, forest) >= 3) {
+                        nodes.add(new Point(i, j));
+                    }
+                }
+
+            }
+        }
+
+        Map<Point, List<PointAndDistance>> pointsAndNeighbours = new HashMap<>();
+
+        for (Point currentNode : nodes) {
+
+            Queue<State> queue = new ArrayDeque<>();
+            queue.add(new State(currentNode.getX(), currentNode.getY(), 0, null));
+
+            Set<String> visited = new HashSet<>();
+
+            while (!queue.isEmpty()) {
+
+                State state = queue.remove();
+
+                for (int i = 0; i < 4; i++) {
+                    int newX = state.getX() + intervals[i][0];
+                    int newY = state.getY() + intervals[i][1];
+
+                    if (newX == -1 || newY == -1 || newX == size || newY == size) {
+                        continue;
+                    }
+
+                    if (nodes.contains(new Point(newX, newY)) && !currentNode.equals(new Point(newX, newY))) {
+                        List<PointAndDistance> pointAndDistances = pointsAndNeighbours.get(currentNode);
+
+                        if (pointAndDistances == null) {
+                            pointAndDistances = new ArrayList<>();
+                            pointsAndNeighbours.put(currentNode, pointAndDistances);
+                        }
+
+                        pointAndDistances.add(new PointAndDistance(new Point(newX, newY), state.getSteps()+1));
+
+                        continue;
+
+                    }
+
+                    if (forest[newX][newY] != '#' && !visited.contains(newX + "," + newY)) {
+                        queue.add(new State(newX, newY, state.getSteps() + 1, null));
+                        visited.add(newX + "," + newY);
+                    }
+                }
+            }
+        }
+
+
+        Set<String> startVisited = new HashSet<>();
+        startVisited.add("1,0");
+        State start = new State(1, 0, 0, startVisited);
+
+        Stack<State> queue = new Stack<>();
+        queue.add(start);
+
+        int max = 0;
 
         while (!queue.isEmpty()) {
 
-            StateB state = queue.remove();
+            State state = queue.pop();
 
-            List<NodeAndDistance> neighbours = getNeighbours(state.getNode(), forest, state.getVisited());
+            Set<String> visited = state.getVisited();
 
-            state.getNode().setNeighbours(neighbours);
+            if (state.getY() == size - 1) {
 
-            //System.out.println("node: " + state.getNode());
+                if (state.getSteps() > max) {
+                    max = state.getSteps();
+                }
 
-            for (NodeAndDistance neighbour : neighbours) {
+                continue;
+            }
 
-                if (neighbour.getNode().getY() != size - 1) {
-                    queue.add(new StateB(neighbour.getNode(), new HashSet<>(state.getVisited())));
+            List<PointAndDistance> neighbours = pointsAndNeighbours.get(new Point(state.getX(), state.getY()));
+
+            for (PointAndDistance pointAndDistance : neighbours) {
+                int newX = pointAndDistance.getPoint().getX();
+                int newY = pointAndDistance.getPoint().getY();
+
+                if (!visited.contains(newX + "," + newY)) {
+                    Set<String> newVisited = new HashSet<>(visited);
+                    queue.add(new State(newX, newY, state.getSteps() + pointAndDistance.getDistance(), newVisited));
+                    newVisited.add(newX + "," + newY);
                 }
             }
 
         }
 
+        System.out.println(max);
 
     }
     
     public static void main(String[] args) throws Exception {
-        //a();
+        a();
         b();
     }
 }

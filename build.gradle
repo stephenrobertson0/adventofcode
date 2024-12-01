@@ -4,11 +4,9 @@ repositories {
 
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 dependencies {
     implementation group: 'org.processing', name: 'core', version: '3.3.7'
+    implementation 'commons-codec:commons-codec:1.17.1'
     compileOnly "org.projectlombok:lombok:1.16.10"
 }
 

@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.security.MessageDigest;
 
-import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.codec.binary.Hex;
 
 
 public class _4 {
@@ -24,7 +24,7 @@ public class _4 {
             
             md.update(toHash.getBytes());
             byte[] digest = md.digest();
-            String myHash = DatatypeConverter.printHexBinary(digest).toUpperCase();
+            String myHash = Hex.encodeHexString(digest).toUpperCase();
             
             if (myHash.startsWith("00000")) {
                 break;
@@ -52,7 +52,7 @@ public class _4 {
         
             md.update(toHash.getBytes());
             byte[] digest = md.digest();
-            String myHash = DatatypeConverter.printHexBinary(digest).toUpperCase();
+            String myHash = Hex.encodeHexString(digest).toUpperCase();
         
             if (myHash.startsWith("000000")) {
                 break;

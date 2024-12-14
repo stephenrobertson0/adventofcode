@@ -1,11 +1,16 @@
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://jogamp.org/deployment/maven")
+    }
 }
 
 apply plugin: 'java'
 
 dependencies {
-    implementation group: 'org.processing', name: 'core', version: '3.3.7'
+    implementation group: 'org.processing', name: 'core', version: '4.3.1'
+    implementation 'org.jogamp.gluegen:gluegen-rt-main:2.5.0'
+    implementation 'org.jogamp.jogl:jogl-all-main:2.5.0'
     implementation 'commons-codec:commons-codec:1.17.1'
     compileOnly "org.projectlombok:lombok:1.16.10"
 }

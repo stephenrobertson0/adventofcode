@@ -2,10 +2,10 @@ package _2024;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
@@ -15,11 +15,11 @@ public class _20 {
 
     private record XY(int x, int y) {}
     private record State(XY position, int distance) {}
-    private record StateV2(XY position, int distance, XY cheatStart, XY cheatEnd) {}
+    private record StateV2(XY position, int distance, List<State> path) {}
     private static int[][] directions = new int[][] {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
     private record Input(Character[][] grid, XY start, XY end) {}
 
-    private static int SIZE = 15;
+    private static int SIZE = 141;
 
     private static void printGrid(Character[][] grid) {
         for (int j = 0; j < SIZE; j++) {
@@ -142,106 +142,73 @@ public class _20 {
         XY end = input.end;
         Character[][] grid = input.grid;
 
-        Set<String> startAndEnd = new HashSet<>();
-        Map<Integer, Integer> counts = new HashMap<>();
+        //printGrid(grid);
 
-        for (int j = 0; j <= 84; j++) {
-            for (int k = 0; k <= 2; k++) {
+        Queue<StateV2> queue = new PriorityQueue<>(Comparator.comparingInt(o -> o.distance));
 
-                //printGrid(grid);
+        List<State> path = new ArrayList<>();
+        path.add(new State(start, 0));
+        queue.add(new StateV2(start, 0, path));
 
-                Queue<StateV2> queue = new PriorityQueue<>(Comparator.comparingInt(o -> o.distance));
+        Set<XY> alreadyVisited = new HashSet<>();
 
-                queue.add(new StateV2(start, 0, null, null));
+        StateV2 min = null;
 
-                Set<XY> alreadyVisited = new HashSet<>();
+        while (!queue.isEmpty()) {
+            StateV2 state = queue.poll();
 
-                StateV2 min = null;
+            if (alreadyVisited.contains(state.position)) {
+                continue;
+            }
 
-                while (!queue.isEmpty()) {
-                    StateV2 state = queue.poll();
-
-                    if (alreadyVisited.contains(state.position)) {
-                        continue;
-                    }
-
-                    if (state.position.x == end.x && state.position.y == end.y) {
-                        if (min == null || state.distance < min.distance) {
-
-                            if (state.cheatEnd == null) {
-                                min = new StateV2(state.position, state.distance, state.cheatStart, new XY(end.x, end.y));
-                            } else {
-                                min = state;
-                            }
-
-                            //min = state;
-                        }
-
-                        continue;
-                    }
-
-                    for (int i = 0; i < directions.length; i++) {
-
-                        int newX = state.position.x + directions[i][0];
-                        int newY = state.position.y + directions[i][1];
-
-                        if (newX >= 0 && newX < SIZE && newY >= 0 && newY < SIZE) {
-                            if (grid[newX][newY] != '#' || (state.distance >= j && state.distance <= j+k)) {
-
-                                XY cheatStart = state.cheatStart;
-                                if (state.distance == j) {
-
-                                    if (grid[newX][newY] == '#') {
-                                        continue;
-                                    }
-
-                                    cheatStart = new XY(newX, newY);
-                                }
-
-                                XY cheatEnd = state.cheatEnd;
-                                if (state.distance == j+k) {
-
-                                    if (grid[newX][newY] == '#') {
-                                        continue;
-                                    }
-
-                                    cheatEnd = new XY(newX, newY);
-                                }
-
-                                queue.add(new StateV2(new XY(newX, newY), state.distance + 1, cheatStart, cheatEnd));
-                            }
-                        }
-                    }
-
-                    alreadyVisited.add(state.position);
+            if (state.position.x == end.x && state.position.y == end.y) {
+                if (min == null || state.distance < min.distance) {
+                    min = state;
                 }
 
-                if (min.distance != 84 && min.cheatEnd != null /*&& grid[min.cheatEnd.x][min.cheatEnd.y] != '#' &&  !min.cheatStart.equals(min.cheatEnd) */) {
-                    int saving = 84 - min.distance;
+                continue;
+            }
 
-                    if (!startAndEnd.contains(min.cheatStart + " " + min.cheatEnd)) {
-                        int c = counts.getOrDefault(saving, 0);
-                        counts.put(saving, c + 1);
+            for (int i = 0; i < directions.length; i++) {
 
-                        if (saving == 64) {
-                            System.out.println("Start and end saving 64: " + j + " " + k);
-                        }
-                    }
+                int newX = state.position.x + directions[i][0];
+                int newY = state.position.y + directions[i][1];
 
-                    System.out.println("Min: " + min + "j = " + j + "k = " + k);
-                    startAndEnd.add(min.cheatStart + " " + min.cheatEnd);
+                if (newX >= 0 && newX < SIZE && newY >= 0 && newY < SIZE && grid[newX][newY] != '#') {
+
+                    List<State> newPath = new ArrayList<>(state.path);
+                    newPath.add(new State(new XY(newX, newY), state.distance + 1));
+
+                    queue.add(new StateV2(new XY(newX, newY), state.distance + 1, newPath));
+                }
+            }
+
+            alreadyVisited.add(state.position);
+        }
+
+        List<State> minPath = min.path;
+
+        for (int j = 0; j < minPath.size(); j++) {
+            for (int k = j+1; k < minPath.size(); k++) {
+
+                State state1 = minPath.get(j);
+                State state2 = minPath.get(k);
+
+                int directDistance = Math.abs(state1.position.x - state2.position.x) + Math.abs(state1.position.y - state2.position.y);
+
+                if (directDistance <= 20 && directDistance < state2.distance - state1.distance - 100 + 1) {
+                    count++;
                 }
 
             }
         }
 
-        System.out.println(startAndEnd.size());
-        System.out.println(counts);
+        System.out.println(count);
 
     }
 
     public static void main(String[] args) throws Exception {
-        //a();
+        a();
         b();
     }
 }

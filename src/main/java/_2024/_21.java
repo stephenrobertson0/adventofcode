@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -292,7 +293,289 @@ public class _21 {
         System.out.println(overallComplexity);
     }
 
+    static Map<String, Set<String>> transitions = new HashMap<>();
+
+    static {
+        transitions.put("A<", Set.of("v<<A", "<v<A"));
+        transitions.put("A^", Set.of("<A"));
+        transitions.put("A>", Set.of("vA"));
+        transitions.put("Av", Set.of("v<A", "<vA"));
+        transitions.put("AA", Set.of("A"));
+
+        transitions.put("<A", Set.of(">>^A", ">^>A"));
+        transitions.put("<>", Set.of(">>A"));
+        transitions.put("<v", Set.of(">A"));
+        transitions.put("<^", Set.of(">^A"));
+        transitions.put("<<", Set.of("A"));
+
+        transitions.put("^A", Set.of(">A"));
+        transitions.put("^<", Set.of("v<A"));
+        transitions.put("^>", Set.of("v>A", ">vA"));
+        transitions.put("^v", Set.of("vA"));
+        transitions.put("^^", Set.of("A"));
+
+        transitions.put(">A", Set.of("^A"));
+        transitions.put("><", Set.of("<<A"));
+        transitions.put(">^", Set.of("^<A", "<^A"));
+        transitions.put(">v", Set.of("<A"));
+        transitions.put(">>", Set.of("A"));
+
+        transitions.put("vA", Set.of(">^A", "^>A"));
+        transitions.put("v>", Set.of(">A"));
+        transitions.put("v<", Set.of("<A"));
+        transitions.put("v^", Set.of("^A"));
+        transitions.put("vv", Set.of("A"));
+    }
+
+    private static long getShortest(String instr, int depth) {
+
+        if (depth == 0) {
+            return instr.length();
+        }
+
+        long total = 0;
+
+        for (int j = 0; j < instr.length(); j++) {
+
+            char first;
+            char second;
+
+            if (j == 0) {
+                first = 'A';
+            } else {
+                first = instr.charAt(j-1);
+            }
+
+            second = instr.charAt(j);
+
+            Set<String> possible = transitions.get(""+first+second);
+
+            long minPossible = Long.MAX_VALUE;
+
+            for (String p : possible) {
+                long shortest = getShortest(p, depth-1);
+
+                if (shortest < minPossible) {
+                    minPossible = shortest;
+                }
+            }
+
+            total += minPossible;
+        }
+
+        return total;
+
+    }
+
+    public static void b() throws Exception {
+
+        List<String> codes = parseInput();
+
+        Character[][] keyGrid = new Character[KEY_X_SIZE][KEY_Y_SIZE];
+        keyGrid[0][0] = '7';
+        keyGrid[1][0] = '8';
+        keyGrid[2][0] = '9';
+        keyGrid[0][1] = '4';
+        keyGrid[1][1] = '5';
+        keyGrid[2][1] = '6';
+        keyGrid[0][2] = '1';
+        keyGrid[1][2] = '2';
+        keyGrid[2][2] = '3';
+        keyGrid[0][3] = '#';
+        keyGrid[1][3] = '0';
+        keyGrid[2][3] = 'A';
+
+        //printGrid(keyGrid);
+
+        Character[][] dirGrid = new Character[DIR_X_SIZE][DIR_Y_SIZE];
+        dirGrid[0][0] = '#';
+        dirGrid[1][0] = '^';
+        dirGrid[2][0] = 'A';
+        dirGrid[0][1] = '<';
+        dirGrid[1][1] = 'v';
+        dirGrid[2][1] = '>';
+
+        for (String code : codes) {
+            List<State> bestMoves = getBestMoves(keyGrid, 'A', code);
+
+            String start = bestMoves.get(0).keyMoves.stream().map(v->v.toString()).collect(Collectors.joining());
+
+            System.out.println(start);
+
+            System.out.println(getShortest(start, 2));
+        }
+
+        List<State> bestMoves = getBestMoves(keyGrid, 'A', "379A");
+
+        String start = "A" + bestMoves.get(0).keyMoves.stream().map(v->v.toString()).collect(Collectors.joining());
+
+        System.out.println(start);
+
+        String newString = "";
+
+        for (int j = 0; j < start.length() - 1; j++) {
+            newString += transitions.get(""+start.charAt(j) + start.charAt(j+1)).iterator().next();
+        }
+
+        System.out.println(newString);
+
+        newString = "A" + newString;
+
+        String newString2 = "";
+
+        for (int j = 0; j < newString.length() - 1; j++) {
+            newString2 += transitions.get(""+newString.charAt(j) + newString.charAt(j+1)).iterator().next();
+        }
+
+        System.out.println(newString2);
+    }
+
+    public static void test() throws Exception {
+        String s = "v<<A>>^AvA^Av<<A>>^Av<A<A>>^AvA^<A>Av<A<A>>^AvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A";
+
+        Character[][] keyGrid = new Character[KEY_X_SIZE][KEY_Y_SIZE];
+        keyGrid[0][0] = '7';
+        keyGrid[1][0] = '8';
+        keyGrid[2][0] = '9';
+        keyGrid[0][1] = '4';
+        keyGrid[1][1] = '5';
+        keyGrid[2][1] = '6';
+        keyGrid[0][2] = '1';
+        keyGrid[1][2] = '2';
+        keyGrid[2][2] = '3';
+        keyGrid[0][3] = '#';
+        keyGrid[1][3] = '0';
+        keyGrid[2][3] = 'A';
+
+        printGrid(keyGrid);
+
+        Character[][] dirGrid = new Character[DIR_X_SIZE][DIR_Y_SIZE];
+        dirGrid[0][0] = '#';
+        dirGrid[1][0] = '^';
+        dirGrid[2][0] = 'A';
+        dirGrid[0][1] = '<';
+        dirGrid[1][1] = 'v';
+        dirGrid[2][1] = '>';
+
+        XY xyDir2 = getDirXY(dirGrid, 'A');
+
+        String str = "";
+
+        for (char c : s.toCharArray()) {
+
+            //printGridWithDir(dirGrid, xyDir2);
+
+            //System.out.println("Moving 1: " + c);
+
+            int[] dir = null;
+
+            if (c == '>') {
+                dir = new int[] { 1, 0 };
+            }
+
+            if (c == '^') {
+                dir = new int[] { 0, -1 };
+            }
+
+            if (c == '<') {
+                dir = new int[] { -1, 0 };
+            }
+
+            if (c == 'v') {
+                dir = new int[] { 0, 1 };
+            }
+
+            if (c == 'A') {
+
+                //System.out.println("Output: " + dirGrid[xyDir2.x][xyDir2.y]);
+
+                str += dirGrid[xyDir2.x][xyDir2.y];
+                continue;
+            }
+
+            xyDir2 = new XY(xyDir2.x + dir[0], xyDir2.y + dir[1]);
+        }
+
+        XY xyDir1 = getDirXY(dirGrid, 'A');
+
+        System.out.println(str);
+
+        String str2 = "";
+
+        for (char c : str.toCharArray()) {
+
+            //printGridWithDir(dirGrid, xyDir1);
+
+            //System.out.println("Moving 2: " + c);
+
+            int[] dir = null;
+
+            if (c == '>') {
+                dir = new int[] { 1, 0 };
+            }
+
+            if (c == '^') {
+                dir = new int[] { 0, -1 };
+            }
+
+            if (c == '<') {
+                dir = new int[] { -1, 0 };
+            }
+
+            if (c == 'v') {
+                dir = new int[] { 0, 1 };
+            }
+
+            if (c == 'A') {
+                str2 += dirGrid[xyDir1.x][xyDir1.y];
+                continue;
+            }
+
+            xyDir1 = new XY(xyDir1.x + dir[0], xyDir1.y + dir[1]);
+        }
+
+        System.out.println(str2);
+
+        XY xyKey = getKeyXY(keyGrid, 'A');
+
+        String str3 = "";
+
+        for (char c : str2.toCharArray()) {
+
+            int[] dir = null;
+
+            if (c == '>') {
+                dir = new int[] { 1, 0 };
+            }
+
+            if (c == '^') {
+                dir = new int[] { 0, -1 };
+            }
+
+            if (c == '<') {
+                dir = new int[] { -1, 0 };
+            }
+
+            if (c == 'v') {
+                dir = new int[] { 0, 1 };
+            }
+
+            if (c == 'A') {
+                str3 += keyGrid[xyKey.x][xyKey.y];
+                continue;
+            }
+
+            xyKey = new XY(xyKey.x + dir[0], xyKey.y + dir[1]);
+        }
+
+        System.out.println(str3);
+
+    }
+
     public static void main(String[] args) throws Exception {
-        a();
+        //a();
+        b();
+
+        //test();
     }
 }

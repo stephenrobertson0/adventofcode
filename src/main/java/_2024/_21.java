@@ -327,7 +327,13 @@ public class _21 {
         transitions.put("vv", Set.of("A"));
     }
 
+    private static Map<String, Long> CACHE = new HashMap<>();
+
     private static long getShortest(String instr, int depth) {
+
+        if (CACHE.get(instr + " " + depth) != null) {
+            return CACHE.get(instr + " " + depth);
+        }
 
         if (depth == 0) {
             return instr.length();
@@ -363,6 +369,8 @@ public class _21 {
             total += minPossible;
         }
 
+        CACHE.put(instr + " " + depth, total);
+
         return total;
 
     }
@@ -395,17 +403,29 @@ public class _21 {
         dirGrid[1][1] = 'v';
         dirGrid[2][1] = '>';
 
+        long overallComplexity = 0;
+
         for (String code : codes) {
             List<State> bestMoves = getBestMoves(keyGrid, 'A', code);
 
-            String start = bestMoves.get(0).keyMoves.stream().map(v->v.toString()).collect(Collectors.joining());
+            long min = Long.MAX_VALUE;
 
-            System.out.println(start);
+            for (State bestMove : bestMoves) {
+                String start = bestMove.keyMoves.stream().map(v -> v.toString()).collect(Collectors.joining());
 
-            System.out.println(getShortest(start, 2));
+                long shortest = getShortest(start, 25);
+                if (shortest < min) {
+                    min = shortest;
+                }
+            }
+
+            long complexity = min * Integer.parseInt(code.substring(0,3));
+            overallComplexity += complexity;
         }
 
-        List<State> bestMoves = getBestMoves(keyGrid, 'A', "379A");
+        System.out.println(overallComplexity);
+
+        /*List<State> bestMoves = getBestMoves(keyGrid, 'A', "379A");
 
         String start = "A" + bestMoves.get(0).keyMoves.stream().map(v->v.toString()).collect(Collectors.joining());
 
@@ -427,11 +447,11 @@ public class _21 {
             newString2 += transitions.get(""+newString.charAt(j) + newString.charAt(j+1)).iterator().next();
         }
 
-        System.out.println(newString2);
+        System.out.println(newString2);*/
     }
 
     public static void test() throws Exception {
-        String s = "v<<A>>^AvA^Av<<A>>^Av<A<A>>^AvA^<A>Av<A<A>>^AvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A";
+        String s = "<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A";
 
         Character[][] keyGrid = new Character[KEY_X_SIZE][KEY_Y_SIZE];
         keyGrid[0][0] = '7';
@@ -573,7 +593,7 @@ public class _21 {
     }
 
     public static void main(String[] args) throws Exception {
-        //a();
+        a();
         b();
 
         //test();

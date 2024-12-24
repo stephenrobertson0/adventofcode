@@ -200,38 +200,34 @@ public class _24 {
 
     private record Swap (String str1, String str2){}
 
-    private static Swap pickSwap(Map<String, Func> funcs, List<String> allWires) {
-        int minWrongCount = Integer.MAX_VALUE;
-        String swapPick1 = "";
-        String swapPick2 = "";
+    private static List<Swap> pickGoodSwaps(Map<String, Func> funcs, List<String> allWires, List<Swap> allSwaps) {
 
-        for (int j = 0; j < allWires.size(); j++) {
-            for (int k = j+1; k < allWires.size(); k++) {
+        int wrongCountNoSwaps = getWrongCount(funcs, allWires, "101010101010101010101010101010101010101010101", "010101010101010101010101010101010101010101010");
+        wrongCountNoSwaps += getWrongCount(funcs, allWires, "101101010111101101000111000000010110000000011", "100011100111110100010111100110001110000011011");
+        wrongCountNoSwaps += getWrongCount(funcs, allWires, "111111000011100001000111001110010110000000011", "100000000111110100010111100010001010000001011");
 
-                String swap1 = allWires.get(j);
-                String swap2 = allWires.get(k);
+        List<Swap> goodSwaps = new ArrayList<>();
 
-                Map<String, Func> newFuncs = new HashMap<>(funcs);
-                newFuncs.put(swap1, funcs.get(swap2));
-                newFuncs.put(swap2, funcs.get(swap1));
+        for (Swap swap : allSwaps) {
 
-                int wrongCount = getWrongCount(newFuncs, allWires, "101010101010101010101010101010101010101010101", "010101010101010101010101010101010101010101010");
-                wrongCount += getWrongCount(newFuncs, allWires, "101101010111101101000111000000010110000000011", "100011100111110100010111100110001110000011011");
-                wrongCount += getWrongCount(newFuncs, allWires, "111111000011100001000111001110010110000000011", "100000000111110100010111100010001010000001011");
-                //System.out.println(wrongCount);
+            String swap1 = swap.str1;
+            String swap2 = swap.str1;
 
-                if (wrongCount < minWrongCount) {
-                    minWrongCount = wrongCount;
-                    swapPick1 = swap1;
-                    swapPick2 = swap2;
-                }
+            Map<String, Func> newFuncs = new HashMap<>(funcs);
+            newFuncs.put(swap1, funcs.get(swap2));
+            newFuncs.put(swap2, funcs.get(swap1));
 
+            int wrongCount = getWrongCount(newFuncs, allWires, "101010101010101010101010101010101010101010101", "010101010101010101010101010101010101010101010");
+            wrongCount += getWrongCount(newFuncs, allWires, "101101010111101101000111000000010110000000011", "100011100111110100010111100110001110000011011");
+            wrongCount += getWrongCount(newFuncs, allWires, "111111000011100001000111001110010110000000011", "100000000111110100010111100010001010000001011");
+            //System.out.println(wrongCount);
+
+            if (wrongCount < wrongCountNoSwaps) {
+                goodSwaps.add(swap);
             }
         }
 
-        System.out.println("Min: " + minWrongCount);
-
-        return new Swap(swapPick1, swapPick2);
+        return goodSwaps;
     }
 
     public static void b() throws Exception {
@@ -267,6 +263,24 @@ public class _24 {
 
             funcs.put(result, func);
         }
+
+        List<Swap> allSwaps = new ArrayList<>();
+
+        for (int j = 0; j < allWires.size(); j++) {
+            for (int k = j+1; k < allWires.size(); k++) {
+
+                String swap1 = allWires.get(j);
+                String swap2 = allWires.get(k);
+
+                allSwaps.add(new Swap(swap1, swap2));
+            }
+        }
+
+        List<Swap> goodSwaps = pickGoodSwaps(funcs, allWires, allSwaps);
+
+        System.out.println(goodSwaps.size());
+
+        /*
 
         // 1
         Swap swap1 = pickSwap(funcs, allWires);
@@ -309,7 +323,7 @@ public class _24 {
         System.out.println(swap1);
         System.out.println(swap2);
         System.out.println(swap3);
-        System.out.println(swap4);
+        System.out.println(swap4);*/
 
     }
 

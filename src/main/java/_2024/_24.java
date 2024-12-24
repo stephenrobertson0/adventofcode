@@ -116,43 +116,9 @@ public class _24 {
         System.out.println(Long.valueOf(finalStr, 2));
     }
 
-    private static int getWrongCount(Map<String, Func> funcs, List<String> allWires, String input1, String input2) {
-        //String xString = new StringBuilder("101101010111101101000111000000010110000000011").reverse().toString();
-        //String yString = new StringBuilder("100011100111110100010111100110001110000011011").reverse().toString();
-
+    private static int getWrongCount(String input1, String input2, String added) {
         String xString = new StringBuilder(input1).reverse().toString();
         String yString = new StringBuilder(input2).reverse().toString();
-
-        Map<String, Integer> values = new HashMap<>();
-
-        for (int j = 0; j < xString.length(); j++) {
-            values.put("x" + ((j < 10) ? "0" : "") + j, Integer.parseInt(""+xString.charAt(j)));
-        }
-
-        for (int j = 0; j < yString.length(); j++) {
-            values.put("y" + ((j < 10) ? "0" : "") + j, Integer.parseInt(""+yString.charAt(j)));
-        }
-
-        Collections.sort(allWires, Comparator.reverseOrder());
-
-        //System.out.println(allWires);
-
-        Map<String, Integer> wiresAndResults = new HashMap<>();
-
-        for (String wire : allWires) {
-            wiresAndResults.put(wire, getResult(wire, values, funcs, 0));
-        }
-
-        String finalStrZ = "";
-
-        for (String wire : allWires) {
-
-            if (wire.startsWith("z")) {
-                finalStrZ += wiresAndResults.get(wire);
-            }
-        }
-
-        //System.out.println(finalStrZ);
 
         String finalXString = "0" + new StringBuilder(xString).reverse();
         String finalYString = "0" + new StringBuilder(yString).reverse();
@@ -180,7 +146,7 @@ public class _24 {
 
             int expected = result == 0 || result == 2 ? 0 : 1;
 
-            int actual = Integer.parseInt(""+finalStrZ.charAt(j));
+            int actual = Integer.parseInt(""+added.charAt(j));
 
             //System.out.println("Actual: " + actual);
             //System.out.println("Expected: " + expected);
@@ -196,6 +162,44 @@ public class _24 {
         //System.out.println(wrongZs);
 
         return wrongZs.size();
+    }
+
+    private static int getWrongCount(Map<String, Func> funcs, List<String> allWires, String input1, String input2) {
+        //String xString = new StringBuilder("101101010111101101000111000000010110000000011").reverse().toString();
+        //String yString = new StringBuilder("100011100111110100010111100110001110000011011").reverse().toString();
+
+        Map<String, Integer> values = new HashMap<>();
+
+        for (int j = 0; j < input1.length(); j++) {
+            values.put("x" + ((j < 10) ? "0" : "") + j, Integer.parseInt(""+input1.charAt(j)));
+        }
+
+        for (int j = 0; j < input2.length(); j++) {
+            values.put("y" + ((j < 10) ? "0" : "") + j, Integer.parseInt(""+input2.charAt(j)));
+        }
+
+        Collections.sort(allWires, Comparator.reverseOrder());
+
+        //System.out.println(allWires);
+
+        Map<String, Integer> wiresAndResults = new HashMap<>();
+
+        for (String wire : allWires) {
+            wiresAndResults.put(wire, getResult(wire, values, funcs, 0));
+        }
+
+        String finalStrZ = "";
+
+        for (String wire : allWires) {
+
+            if (wire.startsWith("z")) {
+                finalStrZ += wiresAndResults.get(wire);
+            }
+        }
+
+        //System.out.println(finalStrZ);
+
+        return getWrongCount(input1, input2, finalStrZ);
     }
 
     private record Swap (String str1, String str2){}
@@ -324,6 +328,18 @@ public class _24 {
         System.out.println(swap2);
         System.out.println(swap3);
         System.out.println(swap4);*/
+
+        String input1 = "111111000011100001000111001110010110000000011";
+        String input2 = "100000000111110100010111100010001010000001011";
+
+        long num1 = Long.parseLong(input1, 2);
+        long num2 = Long.parseLong(input2, 2);
+
+        long added = num1 + num2;
+
+        String addedString = Long.toBinaryString(added);
+
+        System.out.println(getWrongCount(input1, input2, "1111111000011100001000111001110010110000000011"));
 
     }
 

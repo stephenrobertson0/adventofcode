@@ -16,10 +16,6 @@ public class _24 {
 
     private static int getResult(String wire, Map<String, Integer> values, Map<String, Func> funcs, int depth) {
 
-        if (depth > 4) {
-            return 0;
-        }
-
         if (values.get(wire) != null) {
             return values.get(wire);
         }
@@ -94,7 +90,7 @@ public class _24 {
 
         Collections.sort(allWires, Comparator.reverseOrder());
 
-        System.out.println(allWires);
+        //System.out.println(allWires);
 
         Map<String, Integer> wiresAndResults = new HashMap<>();
 
@@ -111,7 +107,7 @@ public class _24 {
             }
         }
 
-        System.out.println(finalStr);
+        //System.out.println(finalStr);
 
         System.out.println(Long.valueOf(finalStr, 2));
     }

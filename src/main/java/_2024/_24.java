@@ -126,8 +126,11 @@ public class _24 {
             }
         }
 
-        String xString = new StringBuilder("101101010111101101000111000000010110000000011").reverse().toString();
-        String yString = new StringBuilder("100011100111110100010111100110001110000011011").reverse().toString();
+        //String xString = new StringBuilder("101101010111101101000111000000010110000000011").reverse().toString();
+        //String yString = new StringBuilder("100011100111110100010111100110001110000011011").reverse().toString();
+
+        String xString = new StringBuilder("101010101010101010101010101010101010101010101").reverse().toString();
+        String yString = new StringBuilder("010101010101010101010101010101010101010101010").reverse().toString();
 
         for (int j = 0; j < xString.length(); j++) {
             values.put("x" + ((j < 10) ? "0" : "") + j, Integer.parseInt(""+xString.charAt(j)));
@@ -181,18 +184,51 @@ public class _24 {
 
         System.out.println(finalStrZ);
 
-        /*String finalXString = "0" + new StringBuilder(xString).reverse();
-        String finalYString =
-
-        System.out.println();
-        System.out.println("0" + new StringBuilder(yString).reverse());*/
+        String finalXString = "0" + new StringBuilder(xString).reverse();
+        String finalYString = "0" + new StringBuilder(yString).reverse();
 
         System.out.println(Long.valueOf(finalStrZ, 2));
+
+        List<Integer> wrongZs = new ArrayList<>();
+
+        int carry = 0;
+
+        for (int j = finalXString.length() - 1; j >=0; j --) {
+            int num1 = Integer.parseInt(""+finalXString.charAt(j));
+            int num2 = Integer.parseInt(""+finalYString.charAt(j));
+
+            System.out.println("Num1: " + num1);
+            System.out.println("Num2: " + num2);
+
+            int result = num1 + num2 + carry;
+
+            if (result == 2 || result == 3) {
+                carry = 1;
+            } else {
+                carry = 0;
+            }
+
+            int expected = result == 0 || result == 2 ? 0 : 1;
+
+            int actual = Integer.parseInt(""+finalStrZ.charAt(j));
+
+            System.out.println("Actual: " + actual);
+            System.out.println("Expected: " + expected);
+
+            if (expected != actual) {
+                wrongZs.add(j);
+            }
+
+            System.out.println();
+
+        }
+
+        System.out.println(wrongZs);
 
     }
 
     public static void main(String[] args) throws Exception {
-        a();
+        //a();
         b();
     }
 }

@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class _24 {
 
-    private record Func (List<String> vars, String op){}
+    private record Func (List<String> vars, String op, String wire){}
 
     private static int getResult(String wire, Map<String, Integer> values, Map<String, Func> funcs, int depth) {
 
@@ -84,7 +84,7 @@ public class _24 {
             String var2 = line.split(" ")[2];
             String result = line.split(" -> ")[1];
 
-            Func func = new Func(List.of(var1, var2), op);
+            Func func = new Func(List.of(var1, var2), op, result);
 
             allWires.add(result);
 
@@ -299,7 +299,7 @@ public class _24 {
             String var2 = line.split(" ")[2];
             String result = line.split(" -> ")[1];
 
-            Func func = new Func(List.of(var1, var2), op);
+            Func func = new Func(List.of(var1, var2), op, result);
 
             allWires.add(result);
 
@@ -411,9 +411,110 @@ public class _24 {
 
     }
 
+    private static List<Func> findFaulty(final List<Func> funcs) {
+        final List<Func> faultyGates = new ArrayList<>();
+        for (final Func func : funcs) {
+            String wire = func.wire;
+            if (wire.startsWith("z") && !wire.equals("z45")) {
+                if (!func.op.equals("XOR")) {
+                    faultyGates.add(func);
+                }
+            } else {
+                String var1 = func.vars.get(0);
+                String var2 = func.vars.get(1);
+                if (!wire.startsWith("z") && !(var1.startsWith("x") || var1.startsWith("y")) && !(var2.startsWith("x") || var2.startsWith("y"))) {
+                    if (func.op.equals("XOR")) {
+                        faultyGates.add(func);
+                    }
+                } else if (func.op.equals("XOR") && (var1.startsWith("x") || var1.startsWith("y")) && (var2.startsWith("x") || var2.startsWith("y"))) {
+                    if (!(var1.endsWith("00") && var2.endsWith("00"))) {
+                        boolean anotherFound = false;
+                        for (final Func func2 : funcs) {
+                            if (!func2.equals(func)) {
+                                if ((func2.vars.get(0).equals(wire) || func2.vars.get(1).equals(wire))
+                                        && func2.op.equals("XOR")) {
+                                    anotherFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!anotherFound) {
+                            faultyGates.add(func);
+                        }
+                    }
+                } else if (func.op.equals("AND") && (var1.startsWith("x") || var1.startsWith("y")) && (var2.startsWith("x") || var2.startsWith("y"))) {
+                    if (!(var1.endsWith("00") && var2.endsWith("00"))) {
+                        boolean anotherFound = false;
+                        for (final Func func2 : funcs) {
+                            if (!func2.equals(func)) {
+                                if ((func2.vars.get(0).equals(wire) || func2.vars.get(1).equals(wire))
+                                        && func2.op.equals("OR")) {
+                                    anotherFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!anotherFound) {
+                            faultyGates.add(func);
+                        }
+                    }
+                }
+            }
+        }
+        return faultyGates;
+    }
+
+    public static void b_v2() throws Exception {
+
+        BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2024/input/input24.txt"));
+
+        while (true) {
+            final String line = fileReader.readLine();
+
+            if (line.isEmpty()) {
+                break;
+            }
+        }
+
+        List<Func> funcs = new ArrayList<>();
+
+        while (true) {
+            final String line = fileReader.readLine();
+
+            if (line == null) {
+                break;
+            }
+
+            String var1 = line.split(" ")[0];
+            String op = line.split(" ")[1];
+            String var2 = line.split(" ")[2];
+            String result = line.split(" -> ")[1];
+
+            Func func = new Func(List.of(var1, var2), op, result);
+
+            funcs.add(func);
+        }
+
+        List<Func> faulty = findFaulty(funcs);
+        System.out.println(getOutput(faulty));
+    }
+
+    private static String getOutput(final List<Func> faulty) {
+        Collections.sort(faulty, Comparator.comparing(x -> x.wire));
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < faulty.size(); i++) {
+            sb.append(faulty.get(i).wire);
+            if (i < faulty.size() - 1) {
+                sb.append(",");
+            }
+        }
+        return sb.toString();
+    }
+
     public static void main(String[] args) throws Exception {
-        //a();
+        a();
         // Wrong: fgb,kck,mnd,psp,vgw,z17,z35,z36
-        b();
+        //b();
+        b_v2();
     }
 }

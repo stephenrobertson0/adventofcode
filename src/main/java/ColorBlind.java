@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -42,14 +44,10 @@ public class ColorBlind {
 
             String blockStr = placement.substring(2, 8);
 
-            Block block = new Block(blockStr);
+            Block block = new Block(blockStr, isHorizontal);
 
             int xIndex = horizontalIndex - 97;
             int yIndex = verticalIndex - 65;
-
-            if (!isHorizontal) {
-                block.makeVertical();
-            }
 
             this.block = block;
             this.xy = new XY(xIndex, yIndex);
@@ -76,44 +74,45 @@ public class ColorBlind {
     }
 
     private static class Block {
-        private char[][] block;
-        private int width;
-        private int height;
-        private boolean horizontal = true;
+        private final char[][] block;
+        private final int width;
+        private final int height;
+        private final boolean horizontal;
         private final String blockStr;
 
-        public Block(String blockStr) {
+        public Block(String blockStr, boolean horizontal) {
             this.blockStr = blockStr;
             char[] blockChars = blockStr.toCharArray();
 
-            this.width = 6;
-            this.height = 2;
+            if (horizontal) {
+                this.width = 6;
+                this.height = 2;
 
-            block = new char[width][height];
+                block = new char[width][height];
 
-            for (int i = 0; i < blockChars.length; i++) {
-                block[i][0] = blockChars[i];
-                block[i][1] = blockChars[5 - i];
-            }
+                for (int i = 0; i < blockChars.length; i++) {
+                    block[i][0] = blockChars[i];
+                    block[i][1] = blockChars[5 - i];
+                }
+            } else {
+                this.width = 2;
+                this.height = 6;
 
-        }
+                block = new char[width][height];
 
-        public void makeVertical() {
-
-            horizontal = false;
-
-            this.width = 2;
-            this.height = 6;
-
-            char[][] newBlock = new char[width][height];
-
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {
-                    newBlock[i][j] = block[j][1-i];
+                for (int i = 0; i < blockChars.length; i++) {
+                    block[0][i] = blockChars[i];
+                    block[1][i] = blockChars[5 - i];
                 }
             }
 
-            block = newBlock;
+            this.horizontal = horizontal;
+
+        }
+
+        public Block makeVertical() {
+
+            return new Block(blockStr, false);
         }
 
         @Override
@@ -209,17 +208,34 @@ public class ColorBlind {
         return allInBounds && hasNeighbour && overlapCount <= 4;
     }
 
-    private static XY getFirstValidPosition(Character[][] grid, Block block) {
+    private static List<Move> getAllValidMoves(Character[][] grid, Block block) {
+        List<Move> validMoves = new ArrayList<>();
+
         for (int j = 0; j < Y_SIZE; j++) {
             for (int k = 0; k < X_SIZE; k++) {
                 XY xy = new XY(k, j);
                 if (isValidPosition(grid, block, xy)) {
-                    return xy;
+                    validMoves.add(new Move(block, xy));
                 }
             }
         }
 
-        return null;
+        block = block.makeVertical();
+
+        for (int j = 0; j < Y_SIZE; j++) {
+            for (int k = 0; k < X_SIZE; k++) {
+                XY xy = new XY(k, j);
+                if (isValidPosition(grid, block, xy)) {
+                    validMoves.add(new Move(block, xy));
+                }
+            }
+        }
+
+        return validMoves;
+    }
+
+    private static Move getFirstValidMove(Character[][] grid, Block block) {
+        return getAllValidMoves(grid, block).iterator().next();
     }
 
     private static Move randomMove(Character[][] grid, Block block) {
@@ -238,14 +254,7 @@ public class ColorBlind {
 
         //printGrid(grid);
 
-        XY validXY = getFirstValidPosition(grid, block);
-
-        if (validXY == null) {
-            block.makeVertical();
-            validXY = getFirstValidPosition(grid, block);
-        }
-
-        return new Move(block, validXY);
+        return getFirstValidMove(grid, block);
     }
 
     private static void doPlacement(Character[][] grid, Move move) {
@@ -326,9 +335,13 @@ public class ColorBlind {
                 break;
             }
 
-            Block myBlock = new Block(myBlockStr);
+            Block myBlock = new Block(myBlockStr, true);
 
             Move move = randomMove(grid, myBlock);
+
+            List<Move> validMoves = getAllValidMoves(grid, myBlock);
+
+            System.err.println("Valid moves count: " + validMoves.size());
 
             doPlacement(grid, new Move(move.getAsPlacement()));
 

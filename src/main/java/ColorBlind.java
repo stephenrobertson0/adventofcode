@@ -176,43 +176,46 @@ public class ColorBlind {
         }
     }
 
-    private static XY getValidPosition(Character[][] grid, Block block) {
+    private static boolean isValidPosition(Character[][] grid, Block block, XY xy) {
+        boolean hasNeighbour = false;
+
+        for (XY outerPosition : block.getOuterPositions()) {
+            int x = xy.x + outerPosition.x;
+            int y = xy.y + outerPosition.y;
+
+            if (x>=0 && x<X_SIZE && y>=0 && y<Y_SIZE) {
+                if (grid[x][y] != '.') {
+                    hasNeighbour = true;
+                }
+            }
+        }
+
+        boolean allInBounds = true;
+        int overlapCount = 0;
+
+        for (XY innerPosition : block.getInnerPositions()) {
+            int x = xy.x + innerPosition.x;
+            int y = xy.y + innerPosition.y;
+
+            if (x>=0 && x<X_SIZE && y>=0 && y<Y_SIZE) {
+                if (grid[x][y] != '.') {
+                    overlapCount++;
+                }
+            } else {
+                allInBounds = false;
+            }
+        }
+
+        return allInBounds && hasNeighbour && overlapCount <= 4;
+    }
+
+    private static XY getFirstValidPosition(Character[][] grid, Block block) {
         for (int j = 0; j < Y_SIZE; j++) {
             for (int k = 0; k < X_SIZE; k++) {
-
-                boolean hasNeighbour = false;
-
-                for (XY outerPosition : block.getOuterPositions()) {
-                    int x = k + outerPosition.x;
-                    int y = j + outerPosition.y;
-
-                    if (x>=0 && x<X_SIZE && y>=0 && y<Y_SIZE) {
-                        if (grid[x][y] != '.') {
-                            hasNeighbour = true;
-                        }
-                    }
+                XY xy = new XY(k, j);
+                if (isValidPosition(grid, block, xy)) {
+                    return xy;
                 }
-
-                boolean allInBounds = true;
-                int overlapCount = 0;
-
-                for (XY innerPosition : block.getInnerPositions()) {
-                    int x = k + innerPosition.x;
-                    int y = j + innerPosition.y;
-
-                    if (x>=0 && x<X_SIZE && y>=0 && y<Y_SIZE) {
-                        if (grid[x][y] != '.') {
-                            overlapCount++;
-                        }
-                    } else {
-                        allInBounds = false;
-                    }
-                }
-
-                if (allInBounds && hasNeighbour && overlapCount <= 4) {
-                    return new XY(k, j);
-                }
-
             }
         }
 
@@ -235,11 +238,11 @@ public class ColorBlind {
 
         //printGrid(grid);
 
-        XY validXY = getValidPosition(grid, block);
+        XY validXY = getFirstValidPosition(grid, block);
 
         if (validXY == null) {
             block.makeVertical();
-            validXY = getValidPosition(grid, block);
+            validXY = getFirstValidPosition(grid, block);
         }
 
         return new Move(block, validXY);

@@ -3,6 +3,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 
@@ -262,27 +263,9 @@ public class ColorBlind {
         return validMoves;
     }
 
-    private static Move getFirstValidMove(Character[][] grid, Block block) {
-        return getAllValidMoves(grid, block).iterator().next();
-    }
-
-    private static Move randomMove(Character[][] grid, Block block) {
-
-        //Set<XY> outerPositions = block.getOuterPositions();
-
-        /*for (XY xy : outerPositions) {
-            grid[5+xy.x][5+xy.y] = '#';
-        }*/
-
-        //Set<XY> innerPositions = block.getInnerPositions();
-
-        /*for (XY xy : innerPositions) {
-            grid[5+xy.x][5+xy.y] = 'O';
-        }*/
-
-        //printGrid(grid);
-
-        return getFirstValidMove(grid, block);
+    private static Move getRandomValidMove(Character[][] grid, Block block) {
+        List<Move> allValidMoves = getAllValidMoves(grid, block);
+        return allValidMoves.get(new Random().nextInt(allValidMoves.size()));
     }
 
     public static Set<XY> getAllPointsWithColor(Character[][] grid, char color) {
@@ -399,7 +382,18 @@ public class ColorBlind {
         return clone;
     }
 
-    private static int getScore(Set<Line> lines, Set<Box> boxes) {
+    private static int getScoreAfterMove(Character[][] grid, Move move, char myColor) {
+        Character[][] gridClone = cloneGrid(grid);
+        doPlacement(gridClone, move);
+
+        return getScore(gridClone, myColor);
+    }
+
+    private static int getScore(Character[][] grid, char myColor) {
+        Set<XY> xyMyColorBefore = getAllPointsWithColor(grid, myColor);
+        Set<Line> lines = getLines(xyMyColorBefore);
+        Set<Box> boxes = getBoxes(lines, xyMyColorBefore);
+
         int lineScore = lines.stream().map(v -> v.length).reduce(Integer::sum).orElse(0);
         int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
         int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
@@ -414,7 +408,14 @@ public class ColorBlind {
         return 4 * partialBoxScore + 50 * fullBoxScore;
     }
 
-    private static int getEnemyScore(Character[][] grid, int myColor) {
+    private static int getEnemyScoreAfterMove(Character[][] grid, Move move, char myColor) {
+        Character[][] gridClone = cloneGrid(grid);
+        doPlacement(gridClone, move);
+
+        return getEnemyScore(gridClone, myColor);
+    }
+
+    private static int getEnemyScore(Character[][] grid, char myColor) {
         Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
         potentialEnemyColors.remove(myColor);
 
@@ -430,33 +431,23 @@ public class ColorBlind {
         return enemyScoreBefore;
     }
 
-    public static Move getBestMove(Character[][] grid, Block block, char myColor) {
+    public static MoveAndScore getBestMove(Character[][] grid, Block block, char myColor) {
 
         List<MoveAndScore> movesAndScores = new ArrayList<>();
 
-        Set<XY> xyMyColorBefore = getAllPointsWithColor(grid, myColor);
-        Set<Line> linesBefore = getLines(xyMyColorBefore);
-        Set<Box> boxesBefore = getBoxes(linesBefore, xyMyColorBefore);
-        int scoreBefore = getScore(linesBefore, boxesBefore) - getEnemyScore(grid, myColor);
+        int scoreBefore = getScore(grid, myColor) - getEnemyScore(grid, myColor);
 
         List<Move> validMoves = getAllValidMoves(grid, block);
 
         for (Move move : validMoves) {
 
-            Character[][] gridClone = cloneGrid(grid);
-            doPlacement(gridClone, move);
-
-            Set<XY> xyMyColor = getAllPointsWithColor(gridClone, myColor);
-            Set<Line> lines = getLines(xyMyColor);
-            Set<Box> boxes = getBoxes(lines, xyMyColor);
-
-            int scoreAfter = getScore(lines, boxes) - getEnemyScore(gridClone, myColor);
+            int scoreAfter = getScoreAfterMove(grid, move, myColor) - getEnemyScoreAfterMove(grid, move, myColor);
 
             movesAndScores.add(new MoveAndScore(move, scoreAfter - scoreBefore));
         }
 
         if (movesAndScores.isEmpty()) {
-            return getFirstValidMove(grid, block);
+            return new MoveAndScore(getRandomValidMove(grid, block), 0);
         } else {
             List<MoveAndScore> sorted = movesAndScores.stream().sorted((x, y) -> Integer.compare(y.score, x.score)).toList();
             MoveAndScore moveAndScore = sorted.stream().findFirst().get();
@@ -465,7 +456,7 @@ public class ColorBlind {
 
             debugPrintln("Picked move: " + moveAndScore);
 
-            return moveAndScore.move;
+            return moveAndScore;
         }
     }
 
@@ -595,7 +586,7 @@ public class ColorBlind {
 
             Block myBlock = new Block(myBlockStr, true);
 
-            Move move = getBestMove(grid, myBlock, myColor);
+            Move move = getBestMove(grid, myBlock, myColor).move;
 
             List<Move> validMoves = getAllValidMoves(grid, myBlock);
 

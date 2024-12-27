@@ -399,6 +399,14 @@ public class ColorBlind {
         return clone;
     }
 
+    private static int getScore(Set<Line> lines, Set<Box> boxes) {
+        int lineScore = lines.stream().map(v -> v.length).reduce(Integer::sum).orElse(0);
+        int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+        int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+
+        return lineScore + 10 * partialBoxScore + 100 * fullBoxScore;
+    }
+
     public static Move getBestMove(Character[][] grid, Block block, char myColor) {
 
         List<MoveAndScore> movesAndScores = new ArrayList<>();
@@ -406,9 +414,7 @@ public class ColorBlind {
         Set<XY> xyMyColorBefore = getAllPointsWithColor(grid, myColor);
         Set<Line> linesBefore = getLines(xyMyColorBefore);
         Set<Box> boxesBefore = getBoxes(linesBefore, xyMyColorBefore);
-        int lineCountBefore = linesBefore.stream().map(v -> v.length).reduce(Integer::sum).orElse(0);
-        int partialBoxCountBefore = boxesBefore.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
-        int fullBoxCountBefore = boxesBefore.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+        int scoreBefore = getScore(linesBefore, boxesBefore);
 
         List<Move> validMoves = getAllValidMoves(grid, block);
 
@@ -420,13 +426,10 @@ public class ColorBlind {
             Set<XY> xyMyColor = getAllPointsWithColor(gridClone, myColor);
             Set<Line> lines = getLines(xyMyColor);
             Set<Box> boxes = getBoxes(lines, xyMyColor);
-            int lineCount = lines.stream().map(v -> v.length).reduce(Integer::sum).orElse(0);
-            int partialBoxCount = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
-            int fullBoxCount = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
-            int score = (lineCount - lineCountBefore) + 10 * (partialBoxCount - partialBoxCountBefore) + 100 * (fullBoxCount - fullBoxCountBefore);
+            int scoreAfter = getScore(lines, boxes);
 
-            movesAndScores.add(new MoveAndScore(move, score));
+            movesAndScores.add(new MoveAndScore(move, scoreAfter - scoreBefore));
         }
 
         if (movesAndScores.isEmpty()) {
@@ -475,8 +478,6 @@ public class ColorBlind {
                 ..645312....316542..
                 ............245613..
                 """;
-
-        //int
 
         for (int i = 0; i < Y_SIZE; i++) {
             for (int j = 0; j < X_SIZE; j++) {

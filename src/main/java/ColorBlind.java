@@ -8,6 +8,8 @@ import java.util.Set;
 
 public class ColorBlind {
 
+    private static boolean DEBUG = false;
+
     private static final int X_SIZE = 20;
     private static final int Y_SIZE = 16;
 
@@ -17,16 +19,28 @@ public class ColorBlind {
 
     private record Line(XY point1, XY point2, int length, boolean horizontal) {}
 
-    private record Box(Set<XY> points, boolean isFull) {}
+    private record Box(Set<XY> points, boolean isFull, int size) {}
 
     private record MoveAndScore(Move move, int score) {}
+
+    private static void debugPrint(Object string) {
+        if (DEBUG) {
+            System.err.print(string);
+        }
+    }
+
+    private static void debugPrintln(Object string) {
+        if (DEBUG) {
+            System.err.println(string);
+        }
+    }
 
     private static void printGrid(Character[][] grid) {
         for (int j = 0; j < Y_SIZE; j++) {
             for (int k = 0; k < X_SIZE; k++) {
-                System.err.print(grid[k][j]);
+                debugPrint(grid[k][j]);
             }
-            System.err.println();
+            debugPrintln("");
         }
     }
 
@@ -362,9 +376,9 @@ public class ColorBlind {
                     XY boxPoint3 = new XY(minX, maxY);
                     XY boxPoint4 = new XY(maxX, maxY);
                     if (points.contains(boxPoint1) && points.contains(boxPoint2) && points.contains(boxPoint3) && points.contains(boxPoint4)) {
-                        boxes.add(new Box(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4), true));
+                        boxes.add(new Box(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4), true, maxX - minX));
                     } else {
-                        boxes.add(new Box(pointsInLines, false));
+                        boxes.add(new Box(pointsInLines, false, maxX - minX));
                     }
 
                 }
@@ -392,9 +406,9 @@ public class ColorBlind {
         Set<XY> xyMyColorBefore = getAllPointsWithColor(grid, myColor);
         Set<Line> linesBefore = getLines(xyMyColorBefore);
         Set<Box> boxesBefore = getBoxes(linesBefore, xyMyColorBefore);
-        int lineCountBefore = linesBefore.size();
-        int partialBoxCountBefore = (int)boxesBefore.stream().filter(v->!v.isFull).count();
-        int fullBoxCountBefore = (int)boxesBefore.stream().filter(v->v.isFull).count();
+        int lineCountBefore = linesBefore.stream().map(v -> v.length).reduce(Integer::sum).orElse(0);
+        int partialBoxCountBefore = boxesBefore.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+        int fullBoxCountBefore = boxesBefore.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
         List<Move> validMoves = getAllValidMoves(grid, block);
 
@@ -406,9 +420,9 @@ public class ColorBlind {
             Set<XY> xyMyColor = getAllPointsWithColor(gridClone, myColor);
             Set<Line> lines = getLines(xyMyColor);
             Set<Box> boxes = getBoxes(lines, xyMyColor);
-            int lineCount = lines.size();
-            int partialBoxCount = (int)boxes.stream().filter(v->!v.isFull).count();
-            int fullBoxCount = (int)boxes.stream().filter(v->v.isFull).count();
+            int lineCount = lines.stream().map(v -> v.length).reduce(Integer::sum).orElse(0);
+            int partialBoxCount = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+            int fullBoxCount = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
             int score = (lineCount - lineCountBefore) + 10 * (partialBoxCount - partialBoxCountBefore) + 100 * (fullBoxCount - fullBoxCountBefore);
 
@@ -421,9 +435,9 @@ public class ColorBlind {
             List<MoveAndScore> sorted = movesAndScores.stream().sorted((x, y) -> Integer.compare(y.score, x.score)).toList();
             MoveAndScore moveAndScore = sorted.stream().findFirst().get();
 
-            System.err.println("Moves and scores: " + sorted);
+            debugPrintln("Moves and scores: " + sorted);
 
-            System.err.println("Picked move: " + moveAndScore);
+            debugPrintln("Picked move: " + moveAndScore);
 
             return moveAndScore.move;
         }
@@ -527,7 +541,7 @@ public class ColorBlind {
         char myColor = reader.readLine().charAt(0);
         String firstBlockPlacement = reader.readLine();
 
-        System.err.println("First block placement: " + firstBlockPlacement);
+        debugPrintln("First block placement: " + firstBlockPlacement);
 
         doPlacement(grid, new Move(firstBlockPlacement));
 
@@ -535,7 +549,7 @@ public class ColorBlind {
 
             String opponentMove = reader.readLine();
 
-            System.err.println("Opponent Move: " + opponentMove);
+            debugPrintln("Opponent Move: " + opponentMove);
 
             if (opponentMove.equals("Quit")) {
                 break;
@@ -549,7 +563,7 @@ public class ColorBlind {
 
             String myBlockStr = reader.readLine();
 
-            System.err.println("My block: " + myBlockStr);
+            debugPrintln("My block: " + myBlockStr);
 
             if (myBlockStr.equals("Quit")) {
                 break;
@@ -561,12 +575,12 @@ public class ColorBlind {
 
             List<Move> validMoves = getAllValidMoves(grid, myBlock);
 
-            System.err.println("Valid moves count: " + validMoves.size());
+            debugPrintln("Valid moves count: " + validMoves.size());
 
             doPlacement(grid, new Move(move.getAsPlacement()));
 
             String asMove = move.getAsMove();
-            System.err.println("Making move: " + asMove);
+            debugPrintln("Making move: " + asMove);
             System.out.println(asMove);
 
         }

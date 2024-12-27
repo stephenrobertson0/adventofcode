@@ -407,6 +407,29 @@ public class ColorBlind {
         return lineScore + 10 * partialBoxScore + 100 * fullBoxScore;
     }
 
+    private static int getEnemyScore(Set<Box> boxes) {
+        int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+        int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+
+        return 4 * partialBoxScore + 50 * fullBoxScore;
+    }
+
+    private static int getEnemyScore(Character[][] grid, int myColor) {
+        Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
+        potentialEnemyColors.remove(myColor);
+
+        int enemyScoreBefore = 0;
+
+        for (char potentialEnemy : potentialEnemyColors) {
+            Set<XY> xyEnemyColorBefore = getAllPointsWithColor(grid, potentialEnemy);
+            Set<Line> enemyLinesBefore = getLines(xyEnemyColorBefore);
+            Set<Box> enemyBoxesBefore = getBoxes(enemyLinesBefore, xyEnemyColorBefore);
+            enemyScoreBefore += getEnemyScore(enemyBoxesBefore);
+        }
+
+        return enemyScoreBefore;
+    }
+
     public static Move getBestMove(Character[][] grid, Block block, char myColor) {
 
         List<MoveAndScore> movesAndScores = new ArrayList<>();
@@ -414,7 +437,7 @@ public class ColorBlind {
         Set<XY> xyMyColorBefore = getAllPointsWithColor(grid, myColor);
         Set<Line> linesBefore = getLines(xyMyColorBefore);
         Set<Box> boxesBefore = getBoxes(linesBefore, xyMyColorBefore);
-        int scoreBefore = getScore(linesBefore, boxesBefore);
+        int scoreBefore = getScore(linesBefore, boxesBefore) - getEnemyScore(grid, myColor);
 
         List<Move> validMoves = getAllValidMoves(grid, block);
 
@@ -427,7 +450,7 @@ public class ColorBlind {
             Set<Line> lines = getLines(xyMyColor);
             Set<Box> boxes = getBoxes(lines, xyMyColor);
 
-            int scoreAfter = getScore(lines, boxes);
+            int scoreAfter = getScore(lines, boxes) - getEnemyScore(gridClone, myColor);
 
             movesAndScores.add(new MoveAndScore(move, scoreAfter - scoreBefore));
         }

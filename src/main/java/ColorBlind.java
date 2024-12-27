@@ -77,6 +77,14 @@ public class ColorBlind {
 
             return "" + yChar + xChar + block.getBlockStr() + (block.horizontal ? 'h' : 'v');
         }
+
+        @Override
+        public String toString() {
+            return "Move{" +
+                    "block=" + block +
+                    ", xy=" + xy +
+                    '}';
+        }
     }
 
     private static class Block {
@@ -107,8 +115,8 @@ public class ColorBlind {
                 block = new char[width][height];
 
                 for (int i = 0; i < blockChars.length; i++) {
-                    block[0][i] = blockChars[i];
-                    block[1][i] = blockChars[5 - i];
+                    block[0][i] = blockChars[5 - i];
+                    block[1][i] = blockChars[i];
                 }
             }
 
@@ -407,12 +415,13 @@ public class ColorBlind {
             movesAndScores.add(new MoveAndScore(move, score));
         }
 
-        System.err.println("Moves and scores: " + movesAndScores);
-
         if (movesAndScores.isEmpty()) {
             return getFirstValidMove(grid, block);
         } else {
-            MoveAndScore moveAndScore = movesAndScores.stream().sorted((x,y)->Integer.compare(y.score, x.score)).findFirst().get();
+            List<MoveAndScore> sorted = movesAndScores.stream().sorted((x, y) -> Integer.compare(y.score, x.score)).toList();
+            MoveAndScore moveAndScore = sorted.stream().findFirst().get();
+
+            System.err.println("Moves and scores: " + sorted);
 
             System.err.println("Picked move: " + moveAndScore);
 
@@ -430,6 +439,37 @@ public class ColorBlind {
                 grid[i+xy.x][j+xy.y] = block.getBlock()[i][j];
             }
         }
+    }
+
+    private static void initTestGrid(Character[][] grid) {
+
+        String gridStr = """
+                ....................
+                .........135426.....
+                .513642..624531..13.
+                .24631542351652..46.
+                .....62615335136125.
+                ..32526211316315352.
+                ..5624553314525..64.
+                ..41.13365142135631.
+                ..14..6241563246531.
+                ..65..54.....36.....
+                ..23..316512314253..
+                ......132156452416..
+                ......516342.63.....
+                ..2135463615.51.....
+                ..645312....316542..
+                ............245613..
+                """;
+
+        //int
+
+        for (int i = 0; i < Y_SIZE; i++) {
+            for (int j = 0; j < X_SIZE; j++) {
+                grid[j][i] = gridStr.charAt(i*(X_SIZE+1) + j) == '1' ? '1' : '.';
+            }
+        }
+
     }
 
     public static void main(String[] args) throws Exception {
@@ -460,17 +500,7 @@ public class ColorBlind {
         printGrid(grid);*/
 
         /*initGrid(grid);
-
-        grid[7][3] = '1';
-        grid[1][3] = '1';
-        grid[4][0] = '1';
-        grid[4][3] = '1';
-        grid[4][6] = '1';
-
-        grid[1][0] = '1';
-        grid[7][0] = '1';
-
-        grid[8][8] = '1';
+        initTestGrid(grid);
 
         printGrid(grid);
 
@@ -479,7 +509,14 @@ public class ColorBlind {
         Set<Line> lines = getLines(points);
         System.out.println(lines);
         Set<Box> boxes = getBoxes(lines, points);
-        System.out.println(boxes);*/
+        System.out.println(boxes);
+
+        Block block = new Block("451326", true);
+        System.out.println(block);*/
+
+        //Move bestMove = getBestMove(grid, new Block("413265", true), '1');
+
+        //System.out.println("Best move: " + bestMove.getAsMove());
 
         initGrid(grid);
 

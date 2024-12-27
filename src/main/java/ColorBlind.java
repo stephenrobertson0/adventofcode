@@ -15,6 +15,10 @@ public class ColorBlind {
 
     private record XY(int x, int y) {}
 
+    private record Line(XY point1, XY point2, int length, boolean horizontal) {}
+
+    private record PartialBox(Line line1, Line line2) {}
+
     private static void printGrid(Character[][] grid) {
         for (int j = 0; j < Y_SIZE; j++) {
             for (int k = 0; k < X_SIZE; k++) {
@@ -211,8 +215,8 @@ public class ColorBlind {
     private static List<Move> getAllValidMoves(Character[][] grid, Block block) {
         List<Move> validMoves = new ArrayList<>();
 
-        for (int j = 0; j < Y_SIZE; j++) {
-            for (int k = 0; k < X_SIZE; k++) {
+        for (int j = 0; j < Y_SIZE - 1; j++) {
+            for (int k = 0; k < X_SIZE - 5; k++) {
                 XY xy = new XY(k, j);
                 if (isValidPosition(grid, block, xy)) {
                     validMoves.add(new Move(block, xy));
@@ -222,8 +226,8 @@ public class ColorBlind {
 
         block = block.makeVertical();
 
-        for (int j = 0; j < Y_SIZE; j++) {
-            for (int k = 0; k < X_SIZE; k++) {
+        for (int j = 0; j < Y_SIZE - 5; j++) {
+            for (int k = 0; k < X_SIZE - 1; k++) {
                 XY xy = new XY(k, j);
                 if (isValidPosition(grid, block, xy)) {
                     validMoves.add(new Move(block, xy));
@@ -255,6 +259,122 @@ public class ColorBlind {
         //printGrid(grid);
 
         return getFirstValidMove(grid, block);
+    }
+
+    public static List<XY> getAllPointsWithColor(Character[][] grid, char color) {
+        List<XY> xyWithColor = new ArrayList<>();
+
+        for (int j = 0; j < Y_SIZE; j++) {
+            for (int k = 0; k < X_SIZE; k++) {
+
+                if (grid[k][j] == color) {
+                    XY xy = new XY(k, j);
+
+                    xyWithColor.add(xy);
+                }
+            }
+        }
+
+        return xyWithColor;
+    }
+
+    public static List<Line> getLines(List<XY> points) {
+        List<Line> lines = new ArrayList<>();
+
+        for (int j = 0; j < points.size(); j++) {
+            for (int k = j+1; k < points.size(); k++) {
+
+                XY point1 = points.get(j);
+                XY point2 = points.get(k);
+
+                if (point1.x == point2.x) {
+                    lines.add(new Line(point1, point2, Math.abs(point1.y - point2.y), false));
+                }
+
+                if (point1.y == point2.y) {
+                    lines.add(new Line(point1, point2, Math.abs(point1.x - point2.x), true));
+                }
+
+            }
+        }
+
+        return lines;
+    }
+
+    public static List<PartialBox> getPartialBoxes(List<Line> lines) {
+        List<PartialBox> partialBoxes = new ArrayList<>();
+
+        for (int j = 0; j < lines.size(); j++) {
+            for (int k = j+1; k < lines.size(); k++) {
+
+                Line line1 = lines.get(j);
+                Line line2 = lines.get(k);
+
+                if (line1.length == line2.length
+                        // Lines must be in different directions
+                        && line1.horizontal != line2.horizontal
+                        && (line1.point1.equals(line2.point1) || line1.point2.equals(line2.point2) || line1.point1.equals(line2.point2) || line1.point2.equals(line2.point1))
+                ) {
+                    partialBoxes.add(new PartialBox(line1, line2));
+                }
+
+            }
+        }
+
+        return partialBoxes;
+    }
+
+    public static Character[][] cloneGrid(Character[][] grid) {
+        Character[][] clone = new Character[grid.length][grid[0].length];
+
+        for (int i = 0; i < grid.length; i++) {
+            clone[i] = grid[i].clone();
+        }
+
+        return clone;
+    }
+
+    public static Move getBestMove(Character[][] grid, Block block, char myColor) {
+
+        List<XY> xyMyColorBefore = getAllPointsWithColor(grid, myColor);
+        List<Line> linesBefore = getLines(xyMyColorBefore);
+        List<PartialBox> partialBoxesBefore = getPartialBoxes(linesBefore);
+        int lineCountBefore = linesBefore.size();
+        int partialBoxCountBefore = partialBoxesBefore.size();
+
+        List<Move> validMoves = getAllValidMoves(grid, block);
+        List<Move> movesCreatingLines = new ArrayList<>();
+        List<Move> movesCreatingPartialBoxes = new ArrayList<>();
+
+        for (Move move : validMoves) {
+
+            Character[][] gridClone = cloneGrid(grid);
+            doPlacement(gridClone, move);
+
+            List<XY> xyMyColor = getAllPointsWithColor(gridClone, myColor);
+            List<Line> lines = getLines(xyMyColor);
+            List<PartialBox> partialBoxes = getPartialBoxes(lines);
+
+            if (lines.size() > lineCountBefore) {
+                movesCreatingLines.add(move);
+            }
+
+            if (partialBoxes.size() > partialBoxCountBefore) {
+                movesCreatingPartialBoxes.add(move);
+            }
+
+        }
+
+        if (movesCreatingPartialBoxes.size() > 0) {
+            return movesCreatingPartialBoxes.get(0);
+        }
+
+        if (movesCreatingLines.size() > 0) {
+            return movesCreatingLines.get(0);
+        }
+
+        return getFirstValidMove(grid, block);
+
     }
 
     private static void doPlacement(Character[][] grid, Move move) {
@@ -304,7 +424,7 @@ public class ColorBlind {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        String myColor = reader.readLine();
+        char myColor = reader.readLine().charAt(0);
         String firstBlockPlacement = reader.readLine();
 
         System.err.println("First block placement: " + firstBlockPlacement);
@@ -337,7 +457,7 @@ public class ColorBlind {
 
             Block myBlock = new Block(myBlockStr, true);
 
-            Move move = randomMove(grid, myBlock);
+            Move move = getBestMove(grid, myBlock, myColor);
 
             List<Move> validMoves = getAllValidMoves(grid, myBlock);
 

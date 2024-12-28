@@ -328,7 +328,7 @@ public class ColorBlind {
         return lines;
     }
 
-    public static Set<Box> getBoxes(Set<Line> lines, Set<XY> points) {
+    public static Set<Box> getBoxes(Character[][] grid, Set<Line> lines, Set<XY> points) {
 
         List<Line> linesList = new ArrayList<>(lines);
 
@@ -378,7 +378,15 @@ public class ColorBlind {
                     if (points.contains(boxPoint1) && points.contains(boxPoint2) && points.contains(boxPoint3) && points.contains(boxPoint4)) {
                         boxes.add(new Box(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4), true, maxX - minX));
                     } else {
-                        boxes.add(new Box(pointsInLines, false, maxX - minX));
+
+                        Set<XY> missingPointSet = new HashSet<>(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4));
+                        missingPointSet.removeAll(points);
+                        XY missingPoint = missingPointSet.stream().findFirst().get();
+
+                        // If the missing point from the partial box can't be changed, then don't count the partial box
+                        if (!isXYProtected(grid, missingPoint)) {
+                            boxes.add(new Box(pointsInLines, false, maxX - minX));
+                        }
                     }
 
                 }
@@ -424,7 +432,7 @@ public class ColorBlind {
     private static int getScore(Character[][] grid, char myColor) {
         Set<XY> xyMyColorBefore = getAllPointsWithColor(grid, myColor);
         Set<Line> lines = getLines(xyMyColorBefore);
-        Set<Box> boxes = getBoxes(lines, xyMyColorBefore);
+        Set<Box> boxes = getBoxes(grid, lines, xyMyColorBefore);
 
         int lineScore = lines.stream().filter(v -> v.length < 16).map(v -> v.length).reduce(Integer::sum).orElse(0);
         int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
@@ -456,7 +464,7 @@ public class ColorBlind {
         for (char potentialEnemy : potentialEnemyColors) {
             Set<XY> xyEnemyColorBefore = getAllPointsWithColor(grid, potentialEnemy);
             Set<Line> enemyLinesBefore = getLines(xyEnemyColorBefore);
-            Set<Box> enemyBoxesBefore = getBoxes(enemyLinesBefore, xyEnemyColorBefore);
+            Set<Box> enemyBoxesBefore = getBoxes(grid, enemyLinesBefore, xyEnemyColorBefore);
             enemyScoreBefore += getEnemyScore(enemyBoxesBefore);
         }
 
@@ -533,9 +541,84 @@ public class ColorBlind {
 
     }
 
+    private static List<XY> directions = List.of(new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0));
+
+    private record StartAndDirection(List<XY> starts, XY direction) {}
+
+    private static List<XY> horizontalStarts = List.of(new XY(0, 1), new XY(0, -1));
+    private static List<XY> verticalStarts = List.of(new XY(1, 0), new XY(-1, 0));
+
+    private static boolean isXYAvailable(Character[][] grid, XY xy) {
+        if (xy.x>=0 && xy.x<X_SIZE && xy.y>=0 && xy.y<Y_SIZE) {
+            return grid[xy.x][xy.y] == '.';
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isXYProtected(Character[][] grid, XY xy) {
+
+        List<StartAndDirection> startAndDirections = new ArrayList<>();
+
+        for (XY direction : directions) {
+
+            if (direction.y == 0) {
+                for (XY horizontalStart : horizontalStarts) {
+                    XY start1 = xy;
+                    // Looking horizontally
+                    XY start2 = new XY(xy.x + horizontalStart.x, xy.y + horizontalStart.y);
+
+                    startAndDirections.add(new StartAndDirection(List.of(start1, start2), direction));
+                }
+            } else {
+                for (XY verticalStart : verticalStarts) {
+                    XY start1 = xy;
+                    // Looking vertically
+                    XY start2 = new XY(xy.x + verticalStart.x, xy.y + verticalStart.y);
+
+                    startAndDirections.add(new StartAndDirection(List.of(start1, start2), direction));
+                }
+            }
+        }
+
+        for (StartAndDirection startAndDirection : startAndDirections) {
+
+            int count = 0;
+
+            for (int j = 1; j <= 6; j ++) {
+
+                for (XY start : startAndDirection.starts) {
+
+                    XY check = new XY(start.x + startAndDirection.direction.x * j, start.y + startAndDirection.direction.y * j);
+
+                    if (!isXYAvailable(grid, check)) {
+                        count++;
+                    }
+
+                }
+
+            }
+
+            if (count < 4) {
+                return false;
+            }
+
+        }
+
+        return true;
+    }
+
     public static void main(String[] args) throws Exception {
 
         /*initGrid(grid);
+        initTestGrid(grid);
+
+        System.out.println(isXYProtected(grid, new XY(5, 15))); // true
+        System.out.println(isXYProtected(grid, new XY(8, 15))); // true
+        System.out.println(isXYProtected(grid, new XY(8, 14))); // false
+        System.out.println(isXYProtected(grid, new XY(9, 15))); // false */
+
+        /*
 
         for (int j = 1; j < Y_SIZE; j++) {
             for (int k = 0; k < X_SIZE; k++) {

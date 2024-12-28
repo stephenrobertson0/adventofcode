@@ -299,11 +299,27 @@ public class ColorBlind {
                 XY point2 = pointsList.get(k);
 
                 if (point1.x == point2.x) {
-                    lines.add(new Line(point1, point2, Math.abs(point1.y - point2.y), false));
+                    // Vertical line
+                    int maxDistanceFromSides = Math.max(X_SIZE - point1.x - 1, point1.x);
+                    int length = Math.abs(point1.y - point2.y);
+
+                    // Lines that are too long cannot be made into boxes, depending on their location,
+                    // e.g. especially lines in the centre
+                    if (length <= maxDistanceFromSides) {
+                        lines.add(new Line(point1, point2, length, false));
+                    }
                 }
 
                 if (point1.y == point2.y) {
-                    lines.add(new Line(point1, point2, Math.abs(point1.x - point2.x), true));
+                    // Horizontal line
+                    int maxDistanceFromSides = Math.max(Y_SIZE - point1.y - 1, point1.y);
+
+                    // Lines that are too long cannot be made into boxes, depending on their location,
+                    // e.g. especially lines in the centre
+                    int length = Math.abs(point1.x - point2.x);
+                    if (length <= maxDistanceFromSides) {
+                        lines.add(new Line(point1, point2, length, true));
+                    }
                 }
 
             }
@@ -410,7 +426,7 @@ public class ColorBlind {
         Set<Line> lines = getLines(xyMyColorBefore);
         Set<Box> boxes = getBoxes(lines, xyMyColorBefore);
 
-        int lineScore = lines.stream().map(v -> v.length).reduce(Integer::sum).orElse(0);
+        int lineScore = lines.stream().filter(v -> v.length < 16).map(v -> v.length).reduce(Integer::sum).orElse(0);
         int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
         int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
@@ -491,22 +507,22 @@ public class ColorBlind {
     private static void initTestGrid(Character[][] grid) {
 
         String gridStr = """
-                00000000000000000000
-                00000000000000000000
-                00000000000000000000
-                00000000000000000000
-                00100001000000000000
-                0000000...0000000000
-                000000.......0000000
-                000000.......0000000
-                000000.......0000000
-                001001.......0000000
-                0000000..00000000000
-                00.........000000000
-                001........000000000
-                0000000..00000000000
-                00000000000000000000
-                00000000000000000000
+                ....................
+                ....................
+                ..............612345
+                .....156432...543216
+                .....234651......14.
+                ..614352.........62.
+                ..253416.52......26.
+                .......544613....41.
+                .......511344126553.
+                .......6431.356214..
+                ...14..3264.........
+                ...36..2325.........
+                ...255341...........
+                ...523526...........
+                ...63315624.........
+                ...41426513.........
                 """;
 
         for (int i = 0; i < Y_SIZE; i++) {

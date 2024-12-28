@@ -7,7 +7,7 @@ import java.util.Random;
 import java.util.Set;
 
 
-public class ColorBlind {
+public class ColorBlindV1 {
 
     private static boolean DEBUG = false;
 
@@ -43,7 +43,6 @@ public class ColorBlind {
             }
             debugPrintln("");
         }
-        debugPrintln("");
     }
 
     private static void initGrid(Character[][] grid) {
@@ -387,22 +386,7 @@ public class ColorBlind {
         Character[][] gridClone = cloneGrid(grid);
         doPlacement(gridClone, move);
 
-        List<Move> allValidEnemyMoves = getAllValidMoves(gridClone, new Block("777777", true));
-
-        int minScoreAfterEnemyMove = Integer.MAX_VALUE;
-
-        for (Move enemyMove : allValidEnemyMoves) {
-            Character[][] enemyGridClone = cloneGrid(gridClone);
-            doPlacement(enemyGridClone, enemyMove);
-
-            int scoreAfterEnemyMove = getScore(enemyGridClone, myColor);
-
-            if (scoreAfterEnemyMove < minScoreAfterEnemyMove) {
-                minScoreAfterEnemyMove = scoreAfterEnemyMove;
-            }
-        }
-
-        return minScoreAfterEnemyMove;
+        return getScore(gridClone, myColor);
     }
 
     private static int getScore(Character[][] grid, char myColor) {
@@ -491,27 +475,27 @@ public class ColorBlind {
     private static void initTestGrid(Character[][] grid) {
 
         String gridStr = """
-                00000000000000000000
-                00000000000000000000
-                00000000000000000000
-                00000000000000000000
-                00100001000000000000
-                0000000...0000000000
-                000000.......0000000
-                000000.......0000000
-                000000.......0000000
-                001001.......0000000
-                0000000..00000000000
-                00.........000000000
-                001........000000000
-                0000000..00000000000
-                00000000000000000000
-                00000000000000000000
+                ....................
+                .........135426.....
+                .513642..624531..13.
+                .24631542351652..46.
+                .....62615335136125.
+                ..32526211316315352.
+                ..5624553314525..64.
+                ..41.13365142135631.
+                ..14..6241563246531.
+                ..65..54.....36.....
+                ..23..316512314253..
+                ......132156452416..
+                ......516342.63.....
+                ..2135463615.51.....
+                ..645312....316542..
+                ............245613..
                 """;
 
         for (int i = 0; i < Y_SIZE; i++) {
             for (int j = 0; j < X_SIZE; j++) {
-                grid[j][i] = gridStr.charAt(i*(X_SIZE+1) + j);
+                grid[j][i] = gridStr.charAt(i*(X_SIZE+1) + j) == '1' ? '1' : '.';
             }
         }
 
@@ -547,9 +531,9 @@ public class ColorBlind {
         /*initGrid(grid);
         initTestGrid(grid);
 
-        printGrid(grid);*/
+        printGrid(grid);
 
-        /*Set<XY> points = getAllPointsWithColor(grid, '1');
+        Set<XY> points = getAllPointsWithColor(grid, '1');
         System.out.println(points);
         Set<Line> lines = getLines(points);
         System.out.println(lines);
@@ -559,13 +543,7 @@ public class ColorBlind {
         Block block = new Block("451326", true);
         System.out.println(block);*/
 
-        /*MoveAndScore bestMove = getBestMove(grid, new Block("623451", true), '1');
-
-        System.err.println(bestMove);
-
-        doPlacement(grid, bestMove.move);
-
-        printGrid(grid);*/
+        //Move bestMove = getBestMove(grid, new Block("413265", true), '1');
 
         //System.out.println("Best move: " + bestMove.getAsMove());
 

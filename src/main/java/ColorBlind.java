@@ -459,16 +459,16 @@ public class ColorBlind {
         Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
         potentialEnemyColors.remove(myColor);
 
-        int enemyScoreBefore = 0;
+        int enemyScore = 0;
 
         for (char potentialEnemy : potentialEnemyColors) {
-            Set<XY> xyEnemyColorBefore = getAllPointsWithColor(grid, potentialEnemy);
-            Set<Line> enemyLinesBefore = getLines(xyEnemyColorBefore);
-            Set<Box> enemyBoxesBefore = getBoxes(grid, enemyLinesBefore, xyEnemyColorBefore);
-            enemyScoreBefore += getEnemyScore(enemyBoxesBefore);
+            Set<XY> xyEnemyColor = getAllPointsWithColor(grid, potentialEnemy);
+            Set<Line> enemyLines = getLines(xyEnemyColor);
+            Set<Box> enemyBoxes = getBoxes(grid, enemyLines, xyEnemyColor);
+            enemyScore += getEnemyScore(enemyBoxes);
         }
 
-        return enemyScoreBefore;
+        return enemyScore;
     }
 
     public static MoveAndScore getBestMove(Character[][] grid, Block block, char myColor) {
@@ -492,7 +492,7 @@ public class ColorBlind {
             List<MoveAndScore> sorted = movesAndScores.stream().sorted((x, y) -> Integer.compare(y.score, x.score)).toList();
             MoveAndScore moveAndScore = sorted.stream().findFirst().get();
 
-            debugPrintln("Moves and scores: " + sorted);
+            //debugPrintln("Moves and scores: " + sorted);
 
             debugPrintln("Picked move: " + moveAndScore);
 

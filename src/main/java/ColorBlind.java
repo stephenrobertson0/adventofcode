@@ -39,7 +39,15 @@ public class ColorBlind {
             int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
             int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
-            return lineScore + 10 * partialBoxScore + 100 * fullBoxScore;
+            return lineScore + 20 * partialBoxScore + 200 * fullBoxScore;
+        }
+
+        public Set<Line> getLines() {
+            return lines;
+        }
+
+        public Set<Box> getBoxes() {
+            return boxes;
         }
     }
 
@@ -56,7 +64,7 @@ public class ColorBlind {
             int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
             int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
-            return 4 * partialBoxScore + 50 * fullBoxScore;
+            return 8 * partialBoxScore + 100 * fullBoxScore;
         }
     }
 
@@ -82,6 +90,23 @@ public class ColorBlind {
             }
 
             return scoreAfter.getNumericScore() - enemyScoreAfter.getNumericScore();
+        }
+
+        @Override
+        public String toString() {
+
+            if (scoreAfter == null) {
+                return "Random Move";
+            }
+
+            Set<Line> linesAdded = scoreAfter.getLines();
+            linesAdded.removeAll(scoreBefore.getLines());
+
+            Set<Box> boxesAdded = scoreAfter.getBoxes();
+            boxesAdded.removeAll(scoreBefore.getBoxes());
+
+            return "Lines added: " + linesAdded + "\n Boxes added: " + boxesAdded;
+
         }
     }
 

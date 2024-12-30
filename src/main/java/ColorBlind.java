@@ -641,11 +641,11 @@ public class ColorBlind {
     private static List<XY> verticalStarts = List.of(new XY(1, 0), new XY(-1, 0));
 
     private static boolean isXYAvailable(Character[][] grid, XY xy) {
-        if (xy.x>=0 && xy.x<X_SIZE && xy.y>=0 && xy.y<Y_SIZE) {
-            return grid[xy.x][xy.y] == '.';
-        } else {
-            return false;
-        }
+        return grid[xy.x][xy.y] == '.';
+    }
+
+    private static boolean isXYOnGrid(XY xy) {
+        return xy.x>=0 && xy.x<X_SIZE && xy.y>=0 && xy.y<Y_SIZE;
     }
 
     private static boolean isXYProtected(Character[][] grid, XY xy) {
@@ -675,16 +675,22 @@ public class ColorBlind {
 
         for (StartAndDirection startAndDirection : startAndDirections) {
 
-            for (int j = -5; j <= 5; j++) {
+            for (int j = -5; j <= 0; j++) {
 
                 int count = 0;
+                boolean onGrid = true;
 
                 for (XY start : startAndDirection.starts) {
 
                     for (int k = 0; k < 6; k++) {
                         XY check = new XY(
                                 start.x + startAndDirection.direction.x * j + startAndDirection.direction.x * k,
-                                start.y + startAndDirection.direction.y * j + +startAndDirection.direction.y * k);
+                                start.y + startAndDirection.direction.y * j + startAndDirection.direction.y * k);
+
+                        if (!isXYOnGrid(check)) {
+                            onGrid = false;
+                            break;
+                        }
 
                         if (!isXYAvailable(grid, check)) {
                             count++;
@@ -692,7 +698,7 @@ public class ColorBlind {
                     }
                 }
 
-                if (count <= 4) {
+                if (onGrid && count <= 4) {
                     return false;
                 }
 

@@ -61,7 +61,7 @@ public class ColorBlind {
         }
 
         public int getNumericScore() {
-            int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+            int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * (v.isProtected ? 2 : 1)).reduce(Integer::sum).orElse(0);
             int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
             return 20 * partialBoxScore + 100 * fullBoxScore;
@@ -804,7 +804,7 @@ public class ColorBlind {
                 Set<Line> enemyLines = getLines(xyEnemyColor);
                 Set<Box> enemyBoxes = getBoxes(grid, enemyLines, xyEnemyColor);
 
-                if (enemyBoxes.stream().filter(v->v.isFull).count() > 1 && enemyColor == null) {
+                if (enemyBoxes.stream().filter(v->v.isFull).count() > 0 && enemyColor == null) {
                     enemyColor = potentialEnemy;
                     debugPrintln("Enemy color: " + enemyColor);
                 }

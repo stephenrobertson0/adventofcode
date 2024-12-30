@@ -66,6 +66,10 @@ public class ColorBlind {
 
             return 8 * partialBoxScore + 100 * fullBoxScore;
         }
+
+        public Set<Box> getBoxes() {
+            return boxes;
+        }
     }
 
     private static class MoveAndScore {
@@ -105,7 +109,15 @@ public class ColorBlind {
             Set<Box> boxesAdded = scoreAfter.getBoxes();
             boxesAdded.removeAll(scoreBefore.getBoxes());
 
-            return "Lines added: " + linesAdded + "\n Boxes added: " + boxesAdded;
+            Set<Box> enemyBoxesRemoved = enemyScoreBefore.getBoxes();
+            enemyBoxesRemoved.removeAll(enemyScoreAfter.getBoxes());
+
+            return "Lines added: " + linesAdded +
+                    "\n Partial boxes added: " + boxesAdded.stream().filter(v->!v.isFull).toList() +
+                    "\n Full boxes added: " + boxesAdded.stream().filter(v->v.isFull).toList() +
+                    "\n Enemy partial boxes removed: " + enemyBoxesRemoved.stream().filter(v->!v.isFull).toList() +
+                    "\n Enemy full boxes removed: " + enemyBoxesRemoved.stream().filter(v->v.isFull).toList() +
+                    "\n Score: " + getNumericScore();
 
         }
     }
@@ -620,7 +632,8 @@ public class ColorBlind {
 
     }
 
-    private static List<XY> directions = List.of(new XY(0, 1), new XY(0, -1), new XY(1, 0), new XY(-1, 0));
+    // South and East
+    private static List<XY> directions = List.of(new XY(0, 1), new XY(1, 0));
 
     private record StartAndDirection(List<XY> starts, XY direction) {}
 
@@ -662,24 +675,27 @@ public class ColorBlind {
 
         for (StartAndDirection startAndDirection : startAndDirections) {
 
-            int count = 0;
+            for (int j = -5; j <= 5; j++) {
 
-            for (int j = 1; j <= 6; j ++) {
+                int count = 0;
 
                 for (XY start : startAndDirection.starts) {
 
-                    XY check = new XY(start.x + startAndDirection.direction.x * j, start.y + startAndDirection.direction.y * j);
+                    for (int k = 0; k < 6; k++) {
+                        XY check = new XY(
+                                start.x + startAndDirection.direction.x * j + startAndDirection.direction.x * k,
+                                start.y + startAndDirection.direction.y * j + +startAndDirection.direction.y * k);
 
-                    if (!isXYAvailable(grid, check)) {
-                        count++;
+                        if (!isXYAvailable(grid, check)) {
+                            count++;
+                        }
                     }
-
                 }
 
-            }
+                if (count <= 4) {
+                    return false;
+                }
 
-            if (count < 4) {
-                return false;
             }
 
         }

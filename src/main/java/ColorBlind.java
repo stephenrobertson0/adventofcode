@@ -23,7 +23,7 @@ public class ColorBlind {
 
     private record Line(XY point1, XY point2, int length, boolean horizontal) {}
 
-    private record Box(Set<XY> points, boolean isFull, int size) {}
+    private record Box(Set<XY> points, boolean isFull, boolean isProtected, int size) {}
 
     private static class Score {
         private Set<Line> lines;
@@ -36,8 +36,8 @@ public class ColorBlind {
 
         public int getNumericScore() {
             int lineScore = lines.stream().filter(v -> v.length < 16).map(v -> v.length).reduce(Integer::sum).orElse(0);
-            int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
-            int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+            int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * (v.isProtected ? 2 : 1)).reduce(Integer::sum).orElse(0);
+            int fullBoxScore = boxes.stream().filter(v -> v.isFull && v.isProtected).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
             return lineScore + 20 * partialBoxScore + 200 * fullBoxScore;
         }
@@ -64,7 +64,7 @@ public class ColorBlind {
             int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
             int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
-            return 8 * partialBoxScore + 100 * fullBoxScore;
+            return 20 * partialBoxScore + 100 * fullBoxScore;
         }
 
         public Set<Box> getBoxes() {
@@ -474,7 +474,11 @@ public class ColorBlind {
                     XY boxPoint3 = new XY(minX, maxY);
                     XY boxPoint4 = new XY(maxX, maxY);
                     if (points.contains(boxPoint1) && points.contains(boxPoint2) && points.contains(boxPoint3) && points.contains(boxPoint4)) {
-                        boxes.add(new Box(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4), true, maxX - minX));
+                        boxes.add(new Box(
+                                Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4),
+                                true,
+                                isXYProtected(grid, boxPoint1) && isXYProtected(grid, boxPoint2) && isXYProtected(grid, boxPoint3) && isXYProtected(grid, boxPoint4),
+                                maxX - minX));
                     } else {
 
                         Set<XY> missingPointSet = new HashSet<>(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4));
@@ -483,7 +487,12 @@ public class ColorBlind {
 
                         // If the missing point from the partial box can't be changed, then don't count the partial box
                         if (!isXYProtected(grid, missingPoint)) {
-                            boxes.add(new Box(pointsInLines, false, maxX - minX));
+
+                            Set<XY> pointsInPartialBox = new HashSet<>(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4));
+                            pointsInPartialBox.removeAll(missingPointSet);
+                            boolean isProtected = pointsInPartialBox.stream().allMatch(v->isXYProtected(grid, v));
+
+                            boxes.add(new Box(pointsInLines, false, isProtected,maxX - minX));
                         }
                     }
 
@@ -509,24 +518,7 @@ public class ColorBlind {
         Character[][] gridClone = cloneGrid(grid);
         doPlacement(gridClone, move);
 
-        List<Move> allValidEnemyMoves = getAllValidMoves(gridClone, new Block("777777", true));
-
-        int minNumericScoreAfterEnemyMove = Integer.MAX_VALUE;
-        Score minScoreAfterEnemyMove = null;
-
-        for (Move enemyMove : allValidEnemyMoves) {
-            Character[][] enemyGridClone = cloneGrid(gridClone);
-            doPlacement(enemyGridClone, enemyMove);
-
-            Score scoreAfterEnemyMove = getScore(enemyGridClone, myColor);
-
-            if (scoreAfterEnemyMove.getNumericScore() < minNumericScoreAfterEnemyMove) {
-                minScoreAfterEnemyMove = scoreAfterEnemyMove;
-                minNumericScoreAfterEnemyMove = scoreAfterEnemyMove.getNumericScore();
-            }
-        }
-
-        return minScoreAfterEnemyMove;
+        return getScore(gridClone, myColor);
     }
 
     private static Score getScore(Character[][] grid, char myColor) {
@@ -545,8 +537,14 @@ public class ColorBlind {
     }
 
     private static EnemyScore getEnemyScore(Character[][] grid, char myColor) {
-        Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
-        potentialEnemyColors.remove(myColor);
+        Set<Character> potentialEnemyColors;
+
+        if (enemyColor != null) {
+            potentialEnemyColors = Set.of(enemyColor);
+        } else {
+            potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
+            potentialEnemyColors.remove(myColor);
+        }
 
         Map<Character, Set<Box>> boxesByEnemy = new HashMap<>();
 
@@ -709,6 +707,8 @@ public class ColorBlind {
         return true;
     }
 
+    private static Character enemyColor = null;
+
     public static void main(String[] args) throws Exception {
 
         /*initGrid(grid);
@@ -796,7 +796,7 @@ public class ColorBlind {
                 doPlacement(grid, new Move(opponentMove));
             }
 
-            /*Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
+            Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
             potentialEnemyColors.remove(myColor);
 
             for (char potentialEnemy : potentialEnemyColors) {
@@ -804,11 +804,11 @@ public class ColorBlind {
                 Set<Line> enemyLines = getLines(xyEnemyColor);
                 Set<Box> enemyBoxes = getBoxes(grid, enemyLines, xyEnemyColor);
 
-                if (enemyBoxes.stream().filter(v->v.isFull).count() > 0 && enemyColor == null) {
+                if (enemyBoxes.stream().filter(v->v.isFull).count() > 1 && enemyColor == null) {
                     enemyColor = potentialEnemy;
                     debugPrintln("Enemy color: " + enemyColor);
                 }
-            }*/
+            }
 
             printGrid(grid);
 

@@ -104,20 +104,30 @@ public class ColorBlind {
                 return "Random Move";
             }
 
-            Set<Line> linesAdded = scoreAfter.getLines();
+            Set<Line> linesAdded = new HashSet<>(scoreAfter.getLines());
             linesAdded.removeAll(scoreBefore.getLines());
 
-            Set<Box> boxesAdded = scoreAfter.getBoxes();
+            Set<Box> boxesAdded = new HashSet<>(scoreAfter.getBoxes());
             boxesAdded.removeAll(scoreBefore.getBoxes());
 
-            Set<Box> enemyBoxesRemoved = enemyScoreBefore.getBoxes();
+            Set<Box> boxesRemoved = new HashSet<>(scoreBefore.getBoxes());
+            boxesRemoved.removeAll(scoreAfter.getBoxes());
+
+            Set<Box> enemyBoxesRemoved = new HashSet<>(enemyScoreBefore.getBoxes());
             enemyBoxesRemoved.removeAll(enemyScoreAfter.getBoxes());
+
+            Set<Box> enemyBoxesAdded = new HashSet<>(enemyScoreAfter.getBoxes());
+            enemyBoxesAdded.removeAll(enemyScoreBefore.getBoxes());
 
             return "Lines added: " + linesAdded +
                     "\n Partial boxes added: " + boxesAdded.stream().filter(v->!v.isFull).toList() +
                     "\n Full boxes added: " + boxesAdded.stream().filter(v->v.isFull).toList() +
+                    "\n Partial boxes removed: " + boxesRemoved.stream().filter(v->!v.isFull).toList() +
+                    "\n Full boxes removed: " + boxesRemoved.stream().filter(v->v.isFull).toList() +
                     "\n Enemy partial boxes removed: " + enemyBoxesRemoved.stream().filter(v->!v.isFull).toList() +
                     "\n Enemy full boxes removed: " + enemyBoxesRemoved.stream().filter(v->v.isFull).toList() +
+                    "\n Enemy partial boxes added: " + enemyBoxesAdded.stream().filter(v->!v.isFull).toList() +
+                    "\n Enemy full boxes added: " + enemyBoxesAdded.stream().filter(v->v.isFull).toList() +
                     "\n Score: " + getNumericScore();
 
         }
@@ -699,7 +709,7 @@ public class ColorBlind {
         return true;
     }
 
-    private static Set<Character> getIdentifiedEnemyColors(Character[][] grid, char myColor) {
+    private static Set<EnemyAndBoxCount> getIdentifiedEnemyColors(Character[][] grid, char myColor) {
         Set<EnemyAndBoxCount> enemyColorBoxCounts = new HashSet<>();
         Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
         potentialEnemyColors.remove(myColor);
@@ -713,10 +723,10 @@ public class ColorBlind {
             enemyColorBoxCounts.add(new EnemyAndBoxCount(potentialEnemy, boxCount));
         }
 
-        Set<Character> identifiedEnemyColors;
+        Set<EnemyAndBoxCount> identifiedEnemyColors;
 
         long maxCount = enemyColorBoxCounts.stream().map(v->v.boxCount).max(Comparator.comparingLong(v->v)).get();
-        identifiedEnemyColors = enemyColorBoxCounts.stream().filter(v->v.boxCount == maxCount).map(v->v.enemy).collect(Collectors.toSet());
+        identifiedEnemyColors = enemyColorBoxCounts.stream().filter(v->v.boxCount == maxCount).collect(Collectors.toSet());
 
         return identifiedEnemyColors;
     }
@@ -796,6 +806,8 @@ public class ColorBlind {
 
         doPlacement(grid, new Move(firstBlockPlacement));
 
+        Character enemyFinalized = null;
+
         while (true) {
 
             String opponentMove = reader.readLine();
@@ -810,7 +822,19 @@ public class ColorBlind {
                 doPlacement(grid, new Move(opponentMove));
             }
 
-            Set<Character> identifiedEnemyColors = getIdentifiedEnemyColors(grid, myColor);
+            Set<Character> identifiedEnemyColors;
+
+            if (enemyFinalized == null) {
+                Set<EnemyAndBoxCount> identifiedEnemyColorsAndCounts = getIdentifiedEnemyColors(grid, myColor);
+                identifiedEnemyColors = identifiedEnemyColorsAndCounts.stream().map(v->v.enemy).collect(Collectors.toSet());
+
+                if (identifiedEnemyColorsAndCounts.stream().findFirst().get().boxCount >= 1) {
+                    enemyFinalized = identifiedEnemyColorsAndCounts.stream().findFirst().get().enemy;
+                }
+
+            } else {
+                identifiedEnemyColors = Set.of(enemyFinalized);
+            }
 
             debugPrintln("Identified enemy colors: " + identifiedEnemyColors);
 

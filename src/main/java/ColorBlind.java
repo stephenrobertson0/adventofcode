@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,13 +18,13 @@ public class ColorBlind {
     private static final int X_SIZE = 20;
     private static final int Y_SIZE = 16;
 
-    private static Character[][] grid = new Character[X_SIZE][Y_SIZE];
-
     private record XY(int x, int y) {}
 
     private record Line(XY point1, XY point2, int length, boolean horizontal) {}
 
     private record Box(Set<XY> points, boolean isFull, boolean isProtected, int size) {}
+
+    private record EnemyAndBoxCount(char enemy, long boxCount) {}
 
     private static class Score {
         private Set<Line> lines;
@@ -529,26 +530,17 @@ public class ColorBlind {
         return new Score(lines, boxes);
     }
 
-    private static EnemyScore getEnemyScoreAfterMove(Character[][] grid, Move move, char myColor) {
+    private static EnemyScore getEnemyScoreAfterMove(Character[][] grid, Move move, Set<Character> identifiedEnemyColors) {
         Character[][] gridClone = cloneGrid(grid);
         doPlacement(gridClone, move);
 
-        return getEnemyScore(gridClone, myColor);
+        return getEnemyScore(gridClone, identifiedEnemyColors);
     }
 
-    private static EnemyScore getEnemyScore(Character[][] grid, char myColor) {
-        Set<Character> potentialEnemyColors;
-
-        if (enemyColor != null) {
-            potentialEnemyColors = Set.of(enemyColor);
-        } else {
-            potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
-            potentialEnemyColors.remove(myColor);
-        }
-
+    private static EnemyScore getEnemyScore(Character[][] grid, Set<Character> identifiedEnemyColors) {
         Map<Character, Set<Box>> boxesByEnemy = new HashMap<>();
 
-        for (char potentialEnemy : potentialEnemyColors) {
+        for (char potentialEnemy : identifiedEnemyColors) {
             Set<XY> xyEnemyColor = getAllPointsWithColor(grid, potentialEnemy);
             Set<Line> enemyLines = getLines(xyEnemyColor);
             Set<Box> enemyBoxes = getBoxes(grid, enemyLines, xyEnemyColor);
@@ -558,19 +550,19 @@ public class ColorBlind {
         return new EnemyScore(boxesByEnemy);
     }
 
-    public static MoveAndScore getBestMove(Character[][] grid, Block block, char myColor) {
+    public static MoveAndScore getBestMove(Character[][] grid, Block block, char myColor, Set<Character> identifiedEnemyColors) {
 
         List<MoveAndScore> movesAndScores = new ArrayList<>();
 
         Score scoreBefore = getScore(grid, myColor);
-        EnemyScore enemyScoreBefore = getEnemyScore(grid, myColor);
+        EnemyScore enemyScoreBefore = getEnemyScore(grid, identifiedEnemyColors);
 
         List<Move> validMoves = getAllValidMoves(grid, block);
 
         for (Move move : validMoves) {
 
             Score scoreAfter = getScoreAfterMove(grid, move, myColor);
-            EnemyScore enemyScoreAfter = getEnemyScoreAfterMove(grid, move, myColor);
+            EnemyScore enemyScoreAfter = getEnemyScoreAfterMove(grid, move, identifiedEnemyColors);
 
             movesAndScores.add(new MoveAndScore(move, scoreBefore, scoreAfter, enemyScoreBefore, enemyScoreAfter));
         }
@@ -707,7 +699,27 @@ public class ColorBlind {
         return true;
     }
 
-    private static Character enemyColor = null;
+    private static Set<Character> getIdentifiedEnemyColors(Character[][] grid, char myColor) {
+        Set<EnemyAndBoxCount> enemyColorBoxCounts = new HashSet<>();
+        Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
+        potentialEnemyColors.remove(myColor);
+
+        for (char potentialEnemy : potentialEnemyColors) {
+            Set<XY> xyEnemyColor = getAllPointsWithColor(grid, potentialEnemy);
+            Set<Line> enemyLines = getLines(xyEnemyColor);
+            Set<Box> enemyBoxes = getBoxes(grid, enemyLines, xyEnemyColor);
+
+            long boxCount = enemyBoxes.stream().filter(v -> v.isFull).count();
+            enemyColorBoxCounts.add(new EnemyAndBoxCount(potentialEnemy, boxCount));
+        }
+
+        Set<Character> identifiedEnemyColors;
+
+        long maxCount = enemyColorBoxCounts.stream().map(v->v.boxCount).max(Comparator.comparingLong(v->v)).get();
+        identifiedEnemyColors = enemyColorBoxCounts.stream().filter(v->v.boxCount == maxCount).map(v->v.enemy).collect(Collectors.toSet());
+
+        return identifiedEnemyColors;
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -769,6 +781,8 @@ public class ColorBlind {
 
         //System.out.println("Best move: " + bestMove.getAsMove());
 
+        Character[][] grid = new Character[X_SIZE][Y_SIZE];
+
         initGrid(grid);
 
         printGrid(grid);
@@ -796,19 +810,9 @@ public class ColorBlind {
                 doPlacement(grid, new Move(opponentMove));
             }
 
-            Set<Character> potentialEnemyColors = new HashSet<>(Set.of('1', '2', '3', '4', '5', '6'));
-            potentialEnemyColors.remove(myColor);
+            Set<Character> identifiedEnemyColors = getIdentifiedEnemyColors(grid, myColor);
 
-            for (char potentialEnemy : potentialEnemyColors) {
-                Set<XY> xyEnemyColor = getAllPointsWithColor(grid, potentialEnemy);
-                Set<Line> enemyLines = getLines(xyEnemyColor);
-                Set<Box> enemyBoxes = getBoxes(grid, enemyLines, xyEnemyColor);
-
-                if (enemyBoxes.stream().filter(v->v.isFull).count() > 0 && enemyColor == null) {
-                    enemyColor = potentialEnemy;
-                    debugPrintln("Enemy color: " + enemyColor);
-                }
-            }
+            debugPrintln("Identified enemy colors: " + identifiedEnemyColors);
 
             printGrid(grid);
 
@@ -822,7 +826,7 @@ public class ColorBlind {
 
             Block myBlock = new Block(myBlockStr, true);
 
-            Move move = getBestMove(grid, myBlock, myColor).move;
+            Move move = getBestMove(grid, myBlock, myColor, identifiedEnemyColors).move;
 
             List<Move> validMoves = getAllValidMoves(grid, myBlock);
 

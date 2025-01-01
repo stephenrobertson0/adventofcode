@@ -22,7 +22,7 @@ public class ColorBlind {
 
     private record Line(XY point1, XY point2, int length, boolean horizontal) {}
 
-    private record Box(Set<XY> points, boolean isFull, boolean isProtected, int size) {}
+    private record Box(Set<XY> points, boolean isFull, boolean isProtected, int protectionCount, int size) {}
 
     private record EnemyAndBoxCount(char enemy, long boxCount) {}
 
@@ -35,12 +35,12 @@ public class ColorBlind {
             this.boxes = boxes;
         }
 
-        public int getNumericScore() {
+        public double getNumericScore() {
             int lineScore = lines.stream().filter(v -> v.length < 16).map(v -> v.length).reduce(Integer::sum).orElse(0);
-            int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * (v.isProtected ? 2 : 1)).reduce(Integer::sum).orElse(0);
+            double partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * ((double)v.protectionCount) / 3).reduce(Double::sum).orElse(0d);
             int fullBoxScore = boxes.stream().filter(v -> v.isFull && v.isProtected).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
-            return lineScore + 20 * partialBoxScore + 200 * fullBoxScore;
+            return lineScore + 40 * partialBoxScore + 200 * fullBoxScore;
         }
 
         public Set<Line> getLines() {
@@ -61,11 +61,11 @@ public class ColorBlind {
             this.boxes = boxesByEnemy.entrySet().stream().flatMap(v->v.getValue().stream()).collect(Collectors.toSet());
         }
 
-        public int getNumericScore() {
-            int partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * (v.isProtected ? 2 : 1)).reduce(Integer::sum).orElse(0);
-            int fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size).reduce(Integer::sum).orElse(0);
+        public double getNumericScore() {
+            double partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * ((double)v.protectionCount) / 3).reduce(Double::sum).orElse(0d);
+            double fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size * ((double)v.protectionCount) / 4).reduce(Double::sum).orElse(0d);
 
-            return 20 * partialBoxScore + 100 * fullBoxScore;
+            return 40 * partialBoxScore + 200 * fullBoxScore;
         }
 
         public Set<Box> getBoxes() {
@@ -88,7 +88,7 @@ public class ColorBlind {
             this.enemyScoreAfter = enemyScoreAfter;
         }
 
-        public int getNumericScore() {
+        public double getNumericScore() {
 
             if (scoreAfter == null) {
                 return 0;
@@ -485,10 +485,14 @@ public class ColorBlind {
                     XY boxPoint3 = new XY(minX, maxY);
                     XY boxPoint4 = new XY(maxX, maxY);
                     if (points.contains(boxPoint1) && points.contains(boxPoint2) && points.contains(boxPoint3) && points.contains(boxPoint4)) {
+
+                        int protectionCount = (int)Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4).stream().filter(v->isXYProtected(grid, v)).count();
+
                         boxes.add(new Box(
                                 Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4),
                                 true,
-                                isXYProtected(grid, boxPoint1) && isXYProtected(grid, boxPoint2) && isXYProtected(grid, boxPoint3) && isXYProtected(grid, boxPoint4),
+                                protectionCount == 4,
+                                protectionCount,
                                 maxX - minX));
                     } else {
 
@@ -501,9 +505,9 @@ public class ColorBlind {
 
                             Set<XY> pointsInPartialBox = new HashSet<>(Set.of(boxPoint1, boxPoint2, boxPoint3, boxPoint4));
                             pointsInPartialBox.removeAll(missingPointSet);
-                            boolean isProtected = pointsInPartialBox.stream().allMatch(v->isXYProtected(grid, v));
+                            int protectionCount = (int)pointsInPartialBox.stream().filter(v->isXYProtected(grid, v)).count();
 
-                            boxes.add(new Box(pointsInLines, false, isProtected,maxX - minX));
+                            boxes.add(new Box(pointsInLines, false, protectionCount == 3, protectionCount, maxX - minX));
                         }
                     }
 
@@ -580,7 +584,7 @@ public class ColorBlind {
         if (movesAndScores.isEmpty()) {
             return new MoveAndScore(getRandomValidMove(grid, block), null, null, null, null);
         } else {
-            List<MoveAndScore> sorted = movesAndScores.stream().sorted((x, y) -> Integer.compare(y.getNumericScore(), x.getNumericScore())).toList();
+            List<MoveAndScore> sorted = movesAndScores.stream().sorted((x, y) -> Double.compare(y.getNumericScore(), x.getNumericScore())).toList();
             MoveAndScore moveAndScore = sorted.stream().findFirst().get();
 
             //debugPrintln("Moves and scores: " + sorted);

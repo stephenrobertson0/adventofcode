@@ -37,10 +37,10 @@ public class ColorBlind {
 
         public double getNumericScore() {
             int lineScore = lines.stream().filter(v -> v.length < 16).map(v -> v.length).reduce(Integer::sum).orElse(0);
-            double partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * ((double)v.protectionCount) / 3).reduce(Double::sum).orElse(0d);
+            double partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * Math.pow((double)v.protectionCount / 3, 1.5)).reduce(Double::sum).orElse(0d);
             int fullBoxScore = boxes.stream().filter(v -> v.isFull && v.isProtected).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
-            return lineScore + 40 * partialBoxScore + 200 * fullBoxScore;
+            return lineScore + 35 * partialBoxScore + 200 * fullBoxScore;
         }
 
         public Set<Line> getLines() {
@@ -62,10 +62,10 @@ public class ColorBlind {
         }
 
         public double getNumericScore() {
-            double partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * ((double)v.protectionCount) / 3).reduce(Double::sum).orElse(0d);
-            double fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size * ((double)v.protectionCount) / 4).reduce(Double::sum).orElse(0d);
+            double partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * Math.pow((double)v.protectionCount / 3, 1.5)).reduce(Double::sum).orElse(0d);
+            double fullBoxScore = boxes.stream().filter(v -> v.isFull).map(v -> v.size * Math.pow((double)v.protectionCount / 4, 1.5)).reduce(Double::sum).orElse(0d);
 
-            return 40 * partialBoxScore + 200 * fullBoxScore;
+            return 35 * partialBoxScore + 200 * fullBoxScore;
         }
 
         public Set<Box> getBoxes() {

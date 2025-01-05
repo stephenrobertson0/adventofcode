@@ -26,6 +26,45 @@ public class ColorBlind {
 
     private record EnemyAndBoxCount(char enemy, long boxCount) {}
 
+    private Character[][] grid = new Character[X_SIZE][Y_SIZE];
+    private Character enemyFinalized = null;
+    private char myColor;
+
+    public ColorBlind(char myColor) {
+        this.myColor = myColor;
+        initGrid(grid);
+    }
+
+    public void doPlacement(String placement) {
+        doPlacement(grid, new Move(placement));
+    }
+
+    private String getNextMove(String myBlockStr) {
+        Set<Character> identifiedEnemyColors;
+
+        if (enemyFinalized == null) {
+            Set<EnemyAndBoxCount> identifiedEnemyColorsAndCounts = getIdentifiedEnemyColors(grid, myColor);
+            identifiedEnemyColors = identifiedEnemyColorsAndCounts.stream().map(v->v.enemy).collect(Collectors.toSet());
+
+            if (identifiedEnemyColorsAndCounts.stream().findFirst().get().boxCount >= 1) {
+                enemyFinalized = identifiedEnemyColorsAndCounts.stream().findFirst().get().enemy;
+            }
+
+        } else {
+            identifiedEnemyColors = Set.of(enemyFinalized);
+        }
+
+        debugPrintln("Identified enemy colors: " + identifiedEnemyColors);
+
+        Block myBlock = new Block(myBlockStr, true);
+
+        Move move = getBestMove(grid, myBlock, myColor, identifiedEnemyColors).move;
+
+        doPlacement(move.getAsPlacement());
+
+        return move.getAsMove();
+    }
+
     private static class Score {
         private Set<Line> lines;
         private Set<Box> boxes;
@@ -737,80 +776,17 @@ public class ColorBlind {
 
     public static void main(String[] args) throws Exception {
 
-        /*initGrid(grid);
-        initTestGrid(grid);
-
-        System.out.println(isXYProtected(grid, new XY(5, 15))); // true
-        System.out.println(isXYProtected(grid, new XY(8, 15))); // true
-        System.out.println(isXYProtected(grid, new XY(8, 14))); // false
-        System.out.println(isXYProtected(grid, new XY(9, 15))); // false */
-
-        /*
-
-        for (int j = 1; j < Y_SIZE; j++) {
-            for (int k = 0; k < X_SIZE; k++) {
-                grid[k][j] = '#';
-
-                if (j == 1 && k > 17) {
-                    grid[k][j] = '.';
-                }
-            }
-        }
-
-        printGrid(grid);*/
-
-        //doPlacement(grid, new Move("Hh654321h"));
-
-        /*Move move = randomMove(grid,  new Block("163524"));
-
-        System.out.println(move.getAsMove());
-        System.out.println(move.getAsMove());
-
-        doPlacement(grid, move);
-
-        printGrid(grid);*/
-
-        /*initGrid(grid);
-        initTestGrid(grid);
-
-        printGrid(grid);*/
-
-        /*Set<XY> points = getAllPointsWithColor(grid, '1');
-        System.out.println(points);
-        Set<Line> lines = getLines(points);
-        System.out.println(lines);
-        Set<Box> boxes = getBoxes(lines, points);
-        System.out.println(boxes);
-
-        Block block = new Block("451326", true);
-        System.out.println(block);*/
-
-        /*MoveAndScore bestMove = getBestMove(grid, new Block("623451", true), '1');
-
-        System.err.println(bestMove);
-
-        doPlacement(grid, bestMove.move);
-
-        printGrid(grid);*/
-
-        //System.out.println("Best move: " + bestMove.getAsMove());
-
-        Character[][] grid = new Character[X_SIZE][Y_SIZE];
-
-        initGrid(grid);
-
-        printGrid(grid);
-
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         char myColor = reader.readLine().charAt(0);
+
+        ColorBlind colorBlind = new ColorBlind(myColor);
+
         String firstBlockPlacement = reader.readLine();
 
         debugPrintln("First block placement: " + firstBlockPlacement);
 
-        doPlacement(grid, new Move(firstBlockPlacement));
-
-        Character enemyFinalized = null;
+        colorBlind.doPlacement(firstBlockPlacement);
 
         while (true) {
 
@@ -823,26 +799,8 @@ public class ColorBlind {
             }
 
             if (!opponentMove.equals("Start")) {
-                doPlacement(grid, new Move(opponentMove));
+                colorBlind.doPlacement(opponentMove);
             }
-
-            Set<Character> identifiedEnemyColors;
-
-            if (enemyFinalized == null) {
-                Set<EnemyAndBoxCount> identifiedEnemyColorsAndCounts = getIdentifiedEnemyColors(grid, myColor);
-                identifiedEnemyColors = identifiedEnemyColorsAndCounts.stream().map(v->v.enemy).collect(Collectors.toSet());
-
-                if (identifiedEnemyColorsAndCounts.stream().findFirst().get().boxCount >= 1) {
-                    enemyFinalized = identifiedEnemyColorsAndCounts.stream().findFirst().get().enemy;
-                }
-
-            } else {
-                identifiedEnemyColors = Set.of(enemyFinalized);
-            }
-
-            debugPrintln("Identified enemy colors: " + identifiedEnemyColors);
-
-            printGrid(grid);
 
             String myBlockStr = reader.readLine();
 
@@ -852,19 +810,9 @@ public class ColorBlind {
                 break;
             }
 
-            Block myBlock = new Block(myBlockStr, true);
-
-            Move move = getBestMove(grid, myBlock, myColor, identifiedEnemyColors).move;
-
-            List<Move> validMoves = getAllValidMoves(grid, myBlock);
-
-            debugPrintln("Valid moves count: " + validMoves.size());
-
-            doPlacement(grid, new Move(move.getAsPlacement()));
-
-            String asMove = move.getAsMove();
-            debugPrintln("Making move: " + asMove);
-            System.out.println(asMove);
+            String move = colorBlind.getNextMove(myBlockStr);
+            debugPrintln("Making move: " + move);
+            System.out.println(move);
 
         }
     }

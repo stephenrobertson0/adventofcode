@@ -14,8 +14,6 @@ public class ColorBlindV1 {
     private static final int X_SIZE = 20;
     private static final int Y_SIZE = 16;
 
-    private static Character[][] grid = new Character[X_SIZE][Y_SIZE];
-
     private record XY(int x, int y) {}
 
     private record Line(XY point1, XY point2, int length, boolean horizontal) {}
@@ -23,6 +21,28 @@ public class ColorBlindV1 {
     private record Box(Set<XY> points, boolean isFull, int size) {}
 
     private record MoveAndScore(Move move, int score) {}
+
+    private Character[][] grid = new Character[X_SIZE][Y_SIZE];
+    private char myColor;
+
+    public ColorBlindV1(char myColor) {
+        this.myColor = myColor;
+        initGrid(grid);
+    }
+
+    public void doPlacement(String placement) {
+        doPlacement(grid, new Move(placement));
+    }
+
+    public String getNextMove(String myBlockStr) {
+        Block myBlock = new Block(myBlockStr, true);
+
+        Move move = getBestMove(grid, myBlock, myColor).move;
+
+        doPlacement(move.getAsPlacement());
+
+        return move.getAsMove();
+    }
 
     private static void debugPrint(Object string) {
         if (DEBUG) {
@@ -503,62 +523,17 @@ public class ColorBlindV1 {
 
     public static void main(String[] args) throws Exception {
 
-        /*initGrid(grid);
-
-        for (int j = 1; j < Y_SIZE; j++) {
-            for (int k = 0; k < X_SIZE; k++) {
-                grid[k][j] = '#';
-
-                if (j == 1 && k > 17) {
-                    grid[k][j] = '.';
-                }
-            }
-        }
-
-        printGrid(grid);*/
-
-        //doPlacement(grid, new Move("Hh654321h"));
-
-        /*Move move = randomMove(grid,  new Block("163524"));
-
-        System.out.println(move.getAsMove());
-        System.out.println(move.getAsMove());
-
-        doPlacement(grid, move);
-
-        printGrid(grid);*/
-
-        /*initGrid(grid);
-        initTestGrid(grid);
-
-        printGrid(grid);
-
-        Set<XY> points = getAllPointsWithColor(grid, '1');
-        System.out.println(points);
-        Set<Line> lines = getLines(points);
-        System.out.println(lines);
-        Set<Box> boxes = getBoxes(lines, points);
-        System.out.println(boxes);
-
-        Block block = new Block("451326", true);
-        System.out.println(block);*/
-
-        //Move bestMove = getBestMove(grid, new Block("413265", true), '1');
-
-        //System.out.println("Best move: " + bestMove.getAsMove());
-
-        initGrid(grid);
-
-        printGrid(grid);
-
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         char myColor = reader.readLine().charAt(0);
+
+        ColorBlindV1 colorBlind = new ColorBlindV1(myColor);
+
         String firstBlockPlacement = reader.readLine();
 
         debugPrintln("First block placement: " + firstBlockPlacement);
 
-        doPlacement(grid, new Move(firstBlockPlacement));
+        colorBlind.doPlacement(firstBlockPlacement);
 
         while (true) {
 
@@ -571,10 +546,8 @@ public class ColorBlindV1 {
             }
 
             if (!opponentMove.equals("Start")) {
-                doPlacement(grid, new Move(opponentMove));
+                colorBlind.doPlacement(opponentMove);
             }
-
-            printGrid(grid);
 
             String myBlockStr = reader.readLine();
 
@@ -584,19 +557,9 @@ public class ColorBlindV1 {
                 break;
             }
 
-            Block myBlock = new Block(myBlockStr, true);
-
-            Move move = getBestMove(grid, myBlock, myColor).move;
-
-            List<Move> validMoves = getAllValidMoves(grid, myBlock);
-
-            debugPrintln("Valid moves count: " + validMoves.size());
-
-            doPlacement(grid, new Move(move.getAsPlacement()));
-
-            String asMove = move.getAsMove();
-            debugPrintln("Making move: " + asMove);
-            System.out.println(asMove);
+            String move = colorBlind.getNextMove(myBlockStr);
+            debugPrintln("Making move: " + move);
+            System.out.println(move);
 
         }
     }

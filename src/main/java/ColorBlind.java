@@ -39,7 +39,7 @@ public class ColorBlind {
         doPlacement(grid, new Move(placement));
     }
 
-    private String getNextMove(String myBlockStr) {
+    public String getNextMove(String myBlockStr) {
         Set<Character> identifiedEnemyColors;
 
         if (enemyFinalized == null) {
@@ -79,7 +79,7 @@ public class ColorBlind {
             double partialBoxScore = boxes.stream().filter(v -> !v.isFull).map(v -> v.size * Math.pow((double)v.protectionCount / 3, 1.5)).reduce(Double::sum).orElse(0d);
             int fullBoxScore = boxes.stream().filter(v -> v.isFull && v.isProtected).map(v -> v.size).reduce(Integer::sum).orElse(0);
 
-            return lineScore + 35 * partialBoxScore + 200 * fullBoxScore;
+            return lineScore * 2 + 35 * partialBoxScore + 200 * fullBoxScore;
         }
 
         public Set<Line> getLines() {

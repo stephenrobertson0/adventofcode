@@ -138,6 +138,72 @@ public class _8 {
 
     public static void b() throws Exception {
 
+        BufferedReader fileReader = new BufferedReader(new FileReader("./src/main/java/_2025/input/input8.txt"));
+
+        List<Box> boxes = new ArrayList<>();
+
+        while (true) {
+            final String line = fileReader.readLine();
+
+            if (line == null) {
+                break;
+            }
+
+            boxes.add(new Box(Integer.parseInt(line.split(",")[0]), Integer.parseInt(line.split(",")[1]), Integer.parseInt(line.split(",")[2])));
+        }
+
+        Set<Connection> connections = new HashSet<>();
+        Map<Box, Set<Box>> connectionMap = new HashMap<>();
+
+        while (true) {
+            Box selectedBox1 = null;
+            Box selectedBox2 = null;
+            double shortestDistance = Double.MAX_VALUE;
+
+            for (int j = 0; j < boxes.size() - 1; j++) {
+                for (int k = j+1; k < boxes.size(); k++) {
+
+                    Box box1 = boxes.get(j);
+                    Box box2 = boxes.get(k);
+
+                    if (connections.contains(new Connection(box1, box2)) || connections.contains(new Connection(box2, box1))) {
+                        continue;
+                    }
+
+                    double distance = Math.sqrt(Math.pow(box1.x - box2.x, 2) + Math.pow(box1.y - box2.y, 2) + Math.pow(box1.z - box2.z, 2));
+
+                    if (distance < shortestDistance) {
+                        shortestDistance = distance;
+                        selectedBox1 = box1;
+                        selectedBox2 = box2;
+                    }
+                }
+            }
+
+            Connection connection = new Connection(selectedBox1, selectedBox2);
+            connections.add(connection);
+
+            Set<Box> set1 = connectionMap.get(connection.box1);
+            if (set1 == null) {
+                set1 = new HashSet<>();
+            }
+            set1.add(connection.box2);
+            connectionMap.put(connection.box1, set1);
+
+            Set<Box> set2 = connectionMap.get(connection.box2);
+            if (set2 == null) {
+                set2 = new HashSet<>();
+            }
+            set2.add(connection.box1);
+            connectionMap.put(connection.box2, set2);
+
+            Set<Box> circuit = getAllBoxes(boxes.get(0), new HashSet<>(boxes), connectionMap);
+
+            if (circuit.size() == boxes.size()) {
+                System.out.println((long)selectedBox1.x * selectedBox2.x);
+                break;
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {

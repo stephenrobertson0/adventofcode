@@ -12,6 +12,7 @@ dependencies {
     implementation 'org.jogamp.gluegen:gluegen-rt-main:2.5.0'
     implementation 'org.jogamp.jogl:jogl-all-main:2.5.0'
     implementation 'commons-codec:commons-codec:1.17.1'
+    implementation 'com.openai:openai-java:4.0.0'
     compileOnly "org.projectlombok:lombok:1.16.10"
 }
 

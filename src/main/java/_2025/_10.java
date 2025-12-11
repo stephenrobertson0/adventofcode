@@ -5,11 +5,17 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.microsoft.z3.BoolExpr;
+import com.microsoft.z3.Context;
+import com.microsoft.z3.IntExpr;
+import com.microsoft.z3.IntNum;
+import com.microsoft.z3.Model;
+import com.microsoft.z3.Optimize;
+import com.microsoft.z3.Status;
 
 
 public class _10 {
@@ -124,7 +130,7 @@ public class _10 {
             configs.add(new Config(desired, buttonList));
         }
 
-        System.out.println(configs.size());
+        //System.out.println(configs.size());
 
         long total = 0;
 
@@ -144,55 +150,68 @@ public class _10 {
 
     }
 
-    private static final Map<List<Integer>, Integer> stateMap = new HashMap<>();
-
     private static int getMinCount(Config2 config) {
 
-        if (stateMap.containsKey(config.desired)) {
-            return stateMap.get(config.desired);
-        }
+        List<List<Integer>> positionToButtons = new ArrayList<>();
 
-        if (config.desired.stream().allMatch(v->v==0)) {
-            return 0;
-        }
+        for (int i = 0; i < config.desired().size(); i++) {
 
-        int min = 100000;
+            List<Integer> buttons = new ArrayList<>();
 
-        List<Integer> pickedJoltage = null;
-
-        for (int j = 0; j < config.buttons.size(); j++) {
-            Button button = config.buttons.get(j);
-
-            List<Integer> joltage = new ArrayList<>(config.desired);
-
-            for (int k = 0; k < button.toggles.size(); k++) {
-                joltage.set(button.toggles.get(k), joltage.get(button.toggles.get(k))-1);
+            for (int j = 0; j < config.buttons().size(); j++) {
+                if (config.buttons.get(j).toggles().contains(i)) {
+                    buttons.add(j);
+                }
             }
 
-            //System.out.println("New joltage: " + joltage);
-
-            if (joltage.stream().anyMatch(v -> v < 0)) {
-                continue;
-            }
-
-            int newCount = getMinCount(new Config2(joltage, config.buttons));
-
-            if (newCount == 100001) {
-                continue;
-            }
-
-            if (newCount < min) {
-                min = newCount;
-                pickedJoltage = joltage;
-            }
+            positionToButtons.add(buttons);
         }
 
-        if (pickedJoltage != null) {
-            //System.out.println(pickedJoltage + " " + min);
-            stateMap.put(pickedJoltage, min);
+        Context ctx = new Context();
+        Optimize opt = ctx.mkOptimize();
+        IntExpr presses = ctx.mkIntConst("presses");
+
+        IntExpr[] buttonVars = IntStream.range(0, config.buttons.size())
+                .mapToObj(i -> ctx.mkIntConst("button" + i))
+                .toArray(IntExpr[]::new);
+
+        for (int j = 0; j < config.desired().size(); j++) {
+            List<IntExpr> counterButtons = positionToButtons.get(j).stream().map(v -> buttonVars[v]).toList();
+
+            IntExpr targetValue = ctx.mkInt(config.desired.get(j));
+
+            IntExpr[] buttonPressesArray = counterButtons.toArray(new IntExpr[0]);
+
+            IntExpr sumOfButtonPresses = (IntExpr) ctx.mkAdd(buttonPressesArray);
+
+            BoolExpr equation = ctx.mkEq(targetValue, sumOfButtonPresses);
+            opt.Add(equation);
         }
 
-        return 1 + min;
+        IntExpr zero = ctx.mkInt(0);
+        for (IntExpr buttonVar : buttonVars) {
+            BoolExpr nonNegative = ctx.mkGe(buttonVar, zero);
+            opt.Add(nonNegative);
+        }
+
+        IntExpr sumOfAllButtonVars = (IntExpr) ctx.mkAdd(buttonVars);
+        BoolExpr totalPressesEq = ctx.mkEq(presses, sumOfAllButtonVars);
+        opt.Add(totalPressesEq);
+
+        opt.MkMinimize(presses);
+
+        Status status = opt.Check();
+
+        if (status == Status.SATISFIABLE) {
+            Model model = opt.getModel();
+            IntNum outputValue = (IntNum) model.evaluate(presses, false);
+            return outputValue.getInt();
+        } else if (status == Status.UNSATISFIABLE) {
+            System.out.println("No solution exists");
+        } else {
+            System.out.println("Optimization could not be determined (" + status + ").");
+        }
+        return Integer.MIN_VALUE;
     }
 
     public static void b() throws Exception {
@@ -209,7 +228,6 @@ public class _10 {
 
             String buttons = line.substring(line.indexOf(']') + 1, line.indexOf('{'));
 
-            //System.out.println(desired);
             String[] buttonsArr = buttons.trim().split(" ");
 
             List<Button> buttonList = new ArrayList<>();
@@ -232,7 +250,6 @@ public class _10 {
         long total = 0;
 
         for (Config2 config : configs) {
-            System.out.println("HERE");
             int minPresses = getMinCount(config);
             total += minPresses;
         }
@@ -242,7 +259,7 @@ public class _10 {
     }
 
     public static void main(String[] args) throws Exception {
-        //a();
+        a();
         b();
     }
 }
